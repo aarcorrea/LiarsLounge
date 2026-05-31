@@ -1,0 +1,26 @@
+plugins {
+    id 'com.gradleup.shadow' version '9.1.0' apply false
+}
+
+allprojects {
+    group = 'com.kooy29.liarslounge'
+    version = rootProject.version
+}
+
+subprojects {
+    apply plugin: 'java-library'
+
+    repositories {
+        mavenCentral()
+    }
+    java {
+        toolchain {
+            languageVersion = JavaLanguageVersion.of(21)
+        }
+    }
+
+    tasks.withType(JavaCompile).configureEach {
+        options.encoding = 'UTF-8'
+        options.release = 11
+    }
+}

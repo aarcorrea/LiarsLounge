@@ -1,0 +1,9 @@
+dependencies {
+    compileOnly('org.spigotmc:spigot:1.8.8-R0.1-SNAPSHOT') {
+        exclude group: 'commons-lang', module: 'commons-lang'
+    }
+}
+
+repositories {
+    maven { url = "https://repo.codemc.io/repository/nms/" }
+}

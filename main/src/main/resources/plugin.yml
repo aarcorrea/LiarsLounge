@@ -1,0 +1,44 @@
+name: LiarsLounge
+version: ${version}
+main: com.kooy29.liarslounge.LiarsLounge
+api-version: '1.13'
+softdepend: [ PlaceholderAPI ]
+commands:
+  liarslounge:
+    description: Main command for LiarsLounge plugin
+    usage: /liarslongue [subcommand]
+    aliases: [ ll ]
+  leave:
+    description: Leave command for LiarsLounge plugin
+    usage: /leave
+permissions:
+  liarslounge.admin:
+    description: Allows access to admin commands
+    default: op
+  liarslounge.allow_commands:
+    description: Allows access to execute any command while in an arena
+    default: op
+  liarslounge.join:
+    description: Allows players to join arenas
+    default: true
+  liarslounge.spectate:
+    description: Allows players to spectate arenas
+    default: true
+  liarslounge.leave:
+    description: Allows players to leave arenas
+    default: true
+  liarslounge.list:
+    description: Allows player to see list of arenas
+    default: true
+  liarslounge.start:
+    description: Allows players to start arenas
+    default: op
+  liarslounge.setup:
+    description: Allows players to set up arenas
+    default: op
+  liarslounge.arena.enable:
+    description: Allows enabling of arenas
+    default: op
+  liarslounge.arena.disable:
+    description: Allows disabling of arenas
+    default: op

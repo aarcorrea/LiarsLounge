@@ -1,0 +1,13 @@
+dependencies {
+    compileOnly project(':api')
+    compileOnly project(':v1_21_R7')
+    compileOnly('io.papermc.paper:paper-api:1.21.9-rc1-R0.1-SNAPSHOT')
+}
+
+repositories {
+    maven { url = uri("https://repo.papermc.io/repository/maven-public/") }
+}
+
+tasks.named('compileJava', JavaCompile) {
+    options.release = 21
+}

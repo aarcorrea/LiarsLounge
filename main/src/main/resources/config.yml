@@ -1,0 +1,27 @@
+database:
+  # Types:
+  # SQLite for Local db storage
+  # MySQL for Remote database
+  type: 'SQLite'
+  host: 'localhost'
+  port: 3306
+  database: 'liarslounge'
+  user: 'root'
+  pass: 'password'
+  ssl: false
+  verify-certificate: true
+
+  # HikariCP tuning
+  pool-size: 10
+  max-lifetime: 1800000
+  idle-timeout: 600000
+  keepalive-time: 0
+  connection-timeout: 30000
+
+game:
+  send-pro-tip: true
+  allow-chat-arena: true
+  allowed-commands:
+    - 'leave'
+    - 'll'
+    - 'liarslounge'
