@@ -20,7 +20,7 @@ Originally developed as a commercial plugin and later released as open source un
 |---|---|
 | Java | 11 or higher |
 | Server | [Spigot](https://spigotmc.org), [Paper](https://papermc.io), or any NMS-compatible fork |
-| Minecraft | 1.8.8 or 1.21.4 |
+| Minecraft | 1.8.8 or 1.21.11 |
 | Database | SQLite _(default)_ or MySQL |
 
 > Forks without NMS access are not supported.
@@ -53,6 +53,8 @@ Originally developed as a commercial plugin and later released as open source un
 <details>
 <summary>View Screenshots</summary>
 <br>
+
+[Gameplay Video](https://youtu.be/hyt7v-J6-3M)
 
 **SCOREBOARD**
 
@@ -95,7 +97,7 @@ LiarsLounge uses a **multi-module Gradle** structure. Core gameplay logic is ver
 api/          Public API surface
 main/         Shared game logic
 v1_8_R3/      Minecraft 1.8.8 NMS implementation
-v1_21_R7/     Minecraft 1.21.4 NMS implementation
+v1_21_R7/     Minecraft 1.21.11 NMS implementation
 paper_*/      Paper-specific integrations
 ```
 
