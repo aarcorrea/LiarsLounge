@@ -47,7 +47,7 @@ public class SeatListener implements Listener {
                 return;
             }
 
-            IHologram holo = playerHolo.getHoloSS(p, "&9Chair - " + (arenaSetupSession.getChairLocations().size() + 1), loc);
+            IHologram holo = playerHolo.getHoloSetupSession(p, "&9Chair - " + (arenaSetupSession.getChairLocations().size() + 1), loc);
             holo.show();
             arenaSetupSession.addChairLocation(new ArenaSetupSession.HoloLoc(loc, holo));
             p.sendMessage(MsgUtil.colorize(MsgUtil.getConfigMessage(MsgPath.Success.Setup.CHAIR_ADD).replace("%chair_location%", locationToString(loc))));

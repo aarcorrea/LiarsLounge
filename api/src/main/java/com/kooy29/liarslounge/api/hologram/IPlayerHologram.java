@@ -8,7 +8,7 @@ import org.bukkit.entity.Player;
 import java.util.List;
 
 public interface IPlayerHologram {
-    IHologram getHoloSS(Player player, String msg, Location loc);
+    IHologram getHoloSetupSession(Player player, String msg, Location loc);
 
     void initHealthHolo(IArena.GamePlayer mainGp, List<Player> playingPlayers);
 

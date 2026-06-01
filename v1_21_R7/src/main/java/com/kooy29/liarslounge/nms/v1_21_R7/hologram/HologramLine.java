@@ -28,13 +28,15 @@ public class HologramLine implements IHologramLine {
     public HologramLine(String text, Hologram hologram) {
         this.text = text;
         this.hologram = hologram;
-        entity = new ArmorStandBuilder(hologram.getLocation().getWorld())
+        Location loc = hologram.getLocation();
+        entity = new ArmorStandBuilder(loc.getWorld())
                 .setInvisible(true)
                 .setGravity(false)
                 .setMarker(true)
-                .setName(text).getArmorStand();
-        updatePosition();
-        show();
+                .setName(text)
+                .setLocation(loc.getX(), loc.getY() + hologram.size() * hologram.getGap(), loc.getZ(), loc.getYaw(), loc.getPitch())
+                .spawn(hologram.getPlayer())
+                .getArmorStand();
     }
 
     @Override
@@ -69,73 +71,28 @@ public class HologramLine implements IHologramLine {
     @Override
     public void refresh() {
         entity.b(CraftChatMessage.fromStringOrNull(text)); // setCustomName
-        updatePosition();
-        if (destroyed()) {
-            return;
-        }
-        PacketPlayOutEntityMetadata metadataPacket =
-                new PacketPlayOutEntityMetadata(
-                        entity.aA(), // getId()
-                        entity.aD().c() // getEntityData()
-                );
-        final var delta = new Vec3D(0, 0, 0);
-        final var positionMoveRotation =
-                new PositionMoveRotation(
-                        entity.dJ(), // trackingPosition()
-                        delta,
-                        0,
-                        entity.ee() // getXRot()
-                );
+        int position = hologram.getLines().indexOf(this);
+        entity.n(hologram.getLocation().getX(), hologram.getLocation().getY() + position * hologram.getGap(), hologram.getLocation().getZ()); //setPosRaw
+        if (destroyed) return;
+
+        PacketPlayOutEntityMetadata metadataPacket = new PacketPlayOutEntityMetadata(entity.aA(), entity.aD().c()); // getId(), getEntityData()
+
+        final var delta = new Vec3D(0,0,0);
+        final var positionMoveRotation = new PositionMoveRotation(entity.dJ(), delta, 0, entity.ee());  // trackingPosition(), , , getXRot()
         final Set<Relative> set = new HashSet<>();
-        PacketPlayOutEntityTeleport teleportPacket =
-                new PacketPlayOutEntityTeleport(
-                        entity.aA(), // getId()
-                        positionMoveRotation,
-                        set,
-                        false
-                );
-        VersionWrapper.sendPackets(
-                hologram.getPlayer(),
-                metadataPacket,
-                teleportPacket
-        );
+        PacketPlayOutEntityTeleport teleportPacket = new PacketPlayOutEntityTeleport(entity.aA(), positionMoveRotation, set, false); // getId()
+
+        VersionWrapper.sendPackets(hologram.getPlayer(), metadataPacket, teleportPacket);
     }
 
     @Override
     public void show() {
         destroyed = false;
-        PacketPlayOutSpawnEntity packet =
-                ArmorStandBuilder.packetPlayOutSpawnEntity(entity);
-        PacketPlayOutEntityMetadata metadataPacket =
-                new PacketPlayOutEntityMetadata(
-                        entity.aA(),
-                        entity.aD().b()
-                );
-        final var delta = new Vec3D(0, 0, 0);
-        final var positionMoveRotation =
-                new PositionMoveRotation(
-                        entity.dJ(),
-                        delta,
-                        0,
-                        entity.ee()
-                );
-        final Set<Relative> set = new HashSet<>();
-        PacketPlayOutEntityTeleport teleportPacket =
-                new PacketPlayOutEntityTeleport(
-                        entity.aA(),
-                        positionMoveRotation,
-                        set,
-                        false
-                );
-        VersionWrapper.sendPackets(
-                hologram.getPlayer(),
-                packet,
-                metadataPacket,
-                teleportPacket
-        );
-        if (!hologram.getLines().contains(this)) {
-            hologram.addLine(this);
-        }
+
+        PacketPlayOutSpawnEntity packet = ArmorStandBuilder.packetPlayOutSpawnEntity(entity);
+        VersionWrapper.sendPacket(hologram.getPlayer(), packet);
+
+        if (!hologram.getLines().contains(this)) hologram.addLine(this);
         hologram.update();
     }
 
@@ -154,15 +111,5 @@ public class HologramLine implements IHologramLine {
     @Override
     public boolean destroyed() {
         return destroyed;
-    }
-
-    private void updatePosition() {
-        Location location = hologram.getLocation();
-        int position = hologram.getLines().indexOf(this);
-        entity.n(
-                location.getX(),
-                location.getY() + position * hologram.getGap(),
-                location.getZ()
-        ); // setPosRaw
     }
 }

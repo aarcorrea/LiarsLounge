@@ -37,7 +37,7 @@ public class ActionItemCommand implements SubCommand {
         if (args.length < 1) {
             MsgUtil.sendConfigMessage(sender, MsgPath.Usage.ACTION_ITEM);
         } else if (args[0].equals("add")) {
-            IHologram holo = instance.getPlayerHolo().getHoloSS(player, "&dAction Item - " + (arenaSetupSession.getActionItemsLocation().size() + 1), location);
+            IHologram holo = instance.getPlayerHolo().getHoloSetupSession(player, "&dAction Item - " + (arenaSetupSession.getActionItemsLocation().size() + 1), location);
             arenaSetupSession.addActionItemsLocation(new ArenaSetupSession.HoloLoc(location, holo));
             holo.show();
             sender.sendMessage(MsgUtil.colorize(MsgUtil.getConfigMessage(MsgPath.Success.Setup.ACTION_ITEM_ADD).replace("%item_location%", locationToString(location))));

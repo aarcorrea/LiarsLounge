@@ -62,7 +62,7 @@ public class ArenaSetupSession implements IArenaSetupSession {
                                 chairSec.getDouble("z"),
                                 (float) chairSec.getDouble("yaw"),
                                 (float) chairSec.getDouble("pitch"));
-                        this.chairLocations.add(new HoloLoc(chairLoc, instance.getPlayerHolo().getHoloSS(player, "&9Chair - " + (this.chairLocations.size() + 1), chairLoc)));
+                        this.chairLocations.add(new HoloLoc(chairLoc, instance.getPlayerHolo().getHoloSetupSession(player, "&9Chair - " + (this.chairLocations.size() + 1), chairLoc)));
                     }
                 }
             }
@@ -78,7 +78,7 @@ public class ArenaSetupSession implements IArenaSetupSession {
                                 actionItemSec.getDouble("z"),
                                 0f,
                                 0f);
-                        this.actionItemsLocation.add(new HoloLoc(actionItemLoc, instance.getPlayerHolo().getHoloSS(player, "&dAction Item - " + (this.actionItemsLocation.size() + 1), actionItemLoc)));
+                        this.actionItemsLocation.add(new HoloLoc(actionItemLoc, instance.getPlayerHolo().getHoloSetupSession(player, "&dAction Item - " + (this.actionItemsLocation.size() + 1), actionItemLoc)));
                     }
                 }
             }

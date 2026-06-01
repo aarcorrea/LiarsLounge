@@ -42,7 +42,7 @@ public class ChairCommand implements SubCommand {
                 MsgUtil.sendConfigMessage(sender, MsgPath.Error.ADD_EXCEED);
                 return;
             }
-            IHologram holo = instance.getPlayerHolo().getHoloSS(player, "&9Chair - " + (arenaSetupSession.getChairLocations().size() + 1), location);
+            IHologram holo = instance.getPlayerHolo().getHoloSetupSession(player, "&9Chair - " + (arenaSetupSession.getChairLocations().size() + 1), location);
             holo.show();
             arenaSetupSession.addChairLocation(new ArenaSetupSession.HoloLoc(location, holo));
             sender.sendMessage(MsgUtil.colorize(MsgUtil.getConfigMessage(MsgPath.Success.Setup.CHAIR_ADD).replace("%chair_location%", locationToString(location))));

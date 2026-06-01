@@ -15,8 +15,8 @@ import java.util.Map;
 
 public class PlayerHologram implements IPlayerHologram {
     @Override
-    public IHologram getHoloSS(Player player, String msg, Location loc) {
-        return new Hologram(player, new Location(loc.getWorld(), loc.getBlockX() + 0.5, loc.getBlockY() - 0.7, loc.getBlockZ() + 0.5), MsgUtil.colorize(Collections.singletonList(msg)));
+    public IHologram getHoloSetupSession(Player player, String msg, Location loc) {
+        return new Hologram(player, new Location(loc.getWorld(), loc.getBlockX() + 0.5, loc.getBlockY() + 0.8, loc.getBlockZ() + 0.5), MsgUtil.colorize(Collections.singletonList(msg)));
     }
 
     @Override
@@ -24,7 +24,7 @@ public class PlayerHologram implements IPlayerHologram {
         for (Player p : playingPlayers) {
             IArena.GamePlayer gp1 = IArena.gamePlayers.get(p);
             if (mainGp == gp1) continue;
-            IHologram holo = new Hologram(mainGp.bukkitPlayer, p.getEyeLocation().clone().subtract(0, 1.90, 0), Arrays.asList(MsgUtil.colorize("&c❤ &7(" + gp1.shots + "/" + "6" + ")"), p.getName()));
+            IHologram holo = new Hologram(mainGp.bukkitPlayer, p.getEyeLocation().add(0, 0.4, 0), Arrays.asList(MsgUtil.colorize("&c❤ &7(" + gp1.shots + "/" + "6" + ")"), p.getName()));
             holo.show();
             mainGp.holograms.put(gp1, holo);
         }

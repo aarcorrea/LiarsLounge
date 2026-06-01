@@ -2,10 +2,10 @@ package com.kooy29.liarslounge.nms.v1_8_R3.hologram;
 
 import com.kooy29.liarslounge.api.hologram.IHologram;
 import com.kooy29.liarslounge.api.hologram.IHologramLine;
+import com.kooy29.liarslounge.nms.v1_8_R3.VersionWrapper;
 import com.kooy29.liarslounge.nms.v1_8_R3.animation.ArmorStandBuilder;
 import net.minecraft.server.v1_8_R3.*;
 import org.bukkit.Location;
-import org.bukkit.craftbukkit.v1_8_R3.entity.CraftPlayer;
 
 public class HologramLine implements IHologramLine {
 
@@ -17,13 +17,14 @@ public class HologramLine implements IHologramLine {
     public HologramLine(String text, Hologram hologram) {
         this.text = text;
         this.hologram = hologram;
-        Location location = hologram.getLocation();
-        this.entity = new ArmorStandBuilder(location.getWorld())
+        Location loc = hologram.getLocation();
+        this.entity = new ArmorStandBuilder(loc.getWorld())
                 .setInvisible(true)
                 .setGravity(false)
-                .setName(text).getArmorStand();
-        updatePosition();
-        show();
+                .setName(text)
+                .setLocation(loc.getX(), loc.getY() + hologram.size() * hologram.getGap(), loc.getZ(), loc.getYaw(), loc.getPitch())
+                .spawn(hologram.getPlayer())
+                .getArmorStand();
     }
 
     @Override
@@ -58,30 +59,21 @@ public class HologramLine implements IHologramLine {
     @Override
     public void refresh() {
         entity.setCustomName(text);
-        updatePosition();
-        if (destroyed) {
-            return;
-        }
-        sendPacket(new PacketPlayOutEntityTeleport(entity));
-        sendPacket(new PacketPlayOutEntityMetadata(
-                entity.getId(),
-                entity.getDataWatcher(),
-                true
-        ));
+        Location loc = hologram.getLocation();
+        int position = hologram.getLines().indexOf(this);
+        entity.setLocation(loc.getX(), loc.getY() + position * hologram.getGap(), loc.getZ(), loc.getYaw(), loc.getPitch());
+        if (destroyed) return;
+
+        PacketPlayOutEntityTeleport packet = new PacketPlayOutEntityTeleport(entity);
+        PacketPlayOutEntityMetadata metadataPacket = new PacketPlayOutEntityMetadata(entity.getId(), entity.getDataWatcher(), true);
+
+        VersionWrapper.sendPackets(hologram.getPlayer(),packet, metadataPacket);
     }
 
     @Override
     public void show() {
         destroyed = false;
-
-        sendPacket(new PacketPlayOutSpawnEntityLiving(entity));
-        sendPacket(new PacketPlayOutEntityMetadata(
-                entity.getId(),
-                entity.getDataWatcher(),
-                true
-        ));
-        sendPacket(new PacketPlayOutEntityTeleport(entity));
-
+        VersionWrapper.sendPacket(hologram.getPlayer(), new PacketPlayOutSpawnEntityLiving(entity));
         if (!hologram.getLines().contains(this)) {
             hologram.addLine(this);
         }
@@ -90,7 +82,7 @@ public class HologramLine implements IHologramLine {
 
     @Override
     public void hide() {
-        sendPacket(new PacketPlayOutEntityDestroy(entity.getId()));
+        VersionWrapper.sendPacket(hologram.getPlayer(), new PacketPlayOutEntityDestroy(entity.getId()));
     }
 
     @Override
@@ -103,24 +95,5 @@ public class HologramLine implements IHologramLine {
     @Override
     public boolean destroyed() {
         return destroyed;
-    }
-
-    private void updatePosition() {
-        Location location = hologram.getLocation();
-        int position = hologram.getLines().indexOf(this);
-        entity.setLocation(
-                location.getX(),
-                location.getY() + (position * hologram.getGap()),
-                location.getZ(),
-                location.getYaw(),
-                location.getPitch()
-        );
-    }
-
-    private void sendPacket(Object packet) {
-        ((CraftPlayer) hologram.getPlayer())
-                .getHandle()
-                .playerConnection
-                .sendPacket((net.minecraft.server.v1_8_R3.Packet<?>) packet);
     }
 }

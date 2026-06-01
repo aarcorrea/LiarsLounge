@@ -15,7 +15,7 @@ import java.util.Map;
 
 public class PlayerHologram implements IPlayerHologram {
     @Override
-    public IHologram getHoloSS(Player player, String msg, Location loc) {
+    public IHologram getHoloSetupSession(Player player, String msg, Location loc) {
         return new Hologram(player, new Location(loc.getWorld(), loc.getBlockX() + 0.5, loc.getBlockY() - 1.2, loc.getBlockZ() + 0.5), MsgUtil.colorize(Collections.singletonList(msg)));
     }
 
