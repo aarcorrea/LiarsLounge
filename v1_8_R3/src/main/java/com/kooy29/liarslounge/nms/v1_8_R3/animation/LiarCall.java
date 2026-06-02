@@ -239,11 +239,13 @@ public class LiarCall implements ILiarCall {
                             }, 1L);
                         }
                     }
-                    Bukkit.getScheduler().runTaskLater(instance, task, 10L);
                     if (fullSwing) {
+                        Bukkit.getScheduler().runTaskLater(instance, task, 10L);
                         Bukkit.getScheduler().runTaskLaterAsynchronously(instance, () -> {
                             destroyAxe(player, stand.getId());
-                        }, 20L);
+                        }, 40L);
+                    } else {
+                        Bukkit.getScheduler().runTaskLater(instance, task, 40L);
                     }
                 }
             }

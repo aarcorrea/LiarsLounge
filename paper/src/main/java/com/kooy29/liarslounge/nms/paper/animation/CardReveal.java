@@ -1,20 +1,20 @@
-package com.kooy29.liarslounge.nms.v1_21_R7.animation;
+package com.kooy29.liarslounge.nms.paper.animation;
 
 import com.kooy29.liarslounge.api.arena.IArena;
-import com.kooy29.liarslounge.nms.v1_21_R7.VersionWrapper;
+import com.kooy29.liarslounge.nms.paper.VersionWrapper;
 import com.kooy29.liarslounge.storage.yaml.SoundsPath;
 import com.kooy29.liarslounge.utils.SoundUtil;
 import com.mojang.datafixers.util.Pair;
-import net.minecraft.network.protocol.game.PacketPlayOutEntityDestroy;
-import net.minecraft.network.protocol.game.PacketPlayOutEntityEquipment;
-import net.minecraft.network.protocol.game.PacketPlayOutEntityMetadata;
-import net.minecraft.network.protocol.game.PacketPlayOutEntityTeleport;
-import net.minecraft.world.entity.EnumItemSlot;
+import net.minecraft.network.protocol.game.ClientboundRemoveEntitiesPacket;
+import net.minecraft.network.protocol.game.ClientboundSetEntityDataPacket;
+import net.minecraft.network.protocol.game.ClientboundSetEquipmentPacket;
+import net.minecraft.network.protocol.game.ClientboundTeleportEntityPacket;
+import net.minecraft.world.entity.EquipmentSlot;
 import net.minecraft.world.entity.PositionMoveRotation;
-import net.minecraft.world.entity.decoration.EntityArmorStand;
-import net.minecraft.world.phys.Vec3D;
+import net.minecraft.world.entity.decoration.ArmorStand;
+import net.minecraft.world.phys.Vec3;
 import org.bukkit.Location;
-import org.bukkit.craftbukkit.v1_21_R7.inventory.CraftItemStack;
+import org.bukkit.craftbukkit.inventory.CraftItemStack;
 import org.bukkit.entity.Player;
 import org.bukkit.inventory.ItemStack;
 import org.bukkit.plugin.java.JavaPlugin;
@@ -55,7 +55,7 @@ public class CardReveal implements com.kooy29.liarslounge.api.animation.ICardRev
                 (cards.length == 2) ? new double[]{-0.25, 0.25} :
                 new double[]{-0.5, 0.0, 0.5};
 
-        List<EntityArmorStand> stands = new ArrayList<>();
+        List<ArmorStand> stands = new ArrayList<>();
         List<Location> baseLocations = new ArrayList<>();
 
         // Spawn armor stands at precomputed locations
@@ -63,7 +63,7 @@ public class CardReveal implements com.kooy29.liarslounge.api.animation.ICardRev
             Location target = computeTargetForViewer(viewer, tableCenter, baseOffsets[i], cards.length);
             baseLocations.add(target);
 
-            EntityArmorStand stand = new ArmorStandBuilder(tableCenter.getWorld())
+            ArmorStand stand = new ArmorStandBuilder(tableCenter.getWorld())
                     .setInvisible(true)
                     .setSmall(true)
                     .setGravity(false)
@@ -127,13 +127,13 @@ public class CardReveal implements com.kooy29.liarslounge.api.animation.ICardRev
                 new double[]{-0.5, 0.0, 0.5};
 
         List<Location> baseLocations = new ArrayList<>();
-        List<EntityArmorStand> stands = new ArrayList<>();
+        List<ArmorStand> stands = new ArrayList<>();
 
         for (int i = 0; i < cards.length; i++) {
             Location target = computeTargetForViewer(accuserPly, tableCenter, baseOffsets[i], cards.length);
             baseLocations.add(target);
 
-            EntityArmorStand stand = new ArmorStandBuilder(tableCenter.getWorld())
+            ArmorStand stand = new ArmorStandBuilder(tableCenter.getWorld())
                     .setInvisible(true)
                     .setSmall(true)
                     .setGravity(false)
@@ -145,8 +145,8 @@ public class CardReveal implements com.kooy29.liarslounge.api.animation.ICardRev
                 if (!spec.isOnline()) continue;
                 VersionWrapper.sendPackets(spec,
                         ArmorStandBuilder.packetPlayOutSpawnEntity(stand),
-                        new PacketPlayOutEntityMetadata(stand.aA(), stand.aD().b()),
-                        new PacketPlayOutEntityEquipment(stand.aA(), List.of(Pair.of(EnumItemSlot.f, CraftItemStack.asNMSCopy(cards[i])))));
+                        new ClientboundSetEntityDataPacket(stand.getId(), stand.getEntityData().packDirty()),
+                        new ClientboundSetEquipmentPacket(stand.getId(), List.of(Pair.of(EquipmentSlot.HEAD, CraftItemStack.asNMSCopy(cards[i])))));
             }
             stands.add(stand);
         }
@@ -171,10 +171,10 @@ public class CardReveal implements com.kooy29.liarslounge.api.animation.ICardRev
                     y = tableCenter.getY() + finalYOffset - totalDrop * progress;
                 } else {
                     cancel();
-                    int[] ids = stands.stream().mapToInt(EntityArmorStand::aA).toArray();
+                    int[] ids = stands.stream().mapToInt(ArmorStand::getId).toArray();
                     for (Player spec : spectators) {
                         if (!spec.isOnline()) continue;
-                        VersionWrapper.sendPacket(spec, new PacketPlayOutEntityDestroy(ids));
+                        VersionWrapper.sendPacket(spec, new ClientboundRemoveEntitiesPacket(ids));
                     }
                     return;
                 }
@@ -182,17 +182,17 @@ public class CardReveal implements com.kooy29.liarslounge.api.animation.ICardRev
                 // Apply same Y to all spectators
                 for (int i = 0; i < stands.size(); i++) {
                     Location base = baseLocations.get(i);
-                    EntityArmorStand stand = stands.get(i);
-                    stand.a(base.getX(), y, base.getZ(), 0f, 0f);
+                    ArmorStand stand = stands.get(i);
+                    stand.absSnapTo(base.getX(), y, base.getZ(), 0f, 0f);
                     var pmr = new PositionMoveRotation(
-                            stand.dI(),
-                            Vec3D.c,
+                            stand.position(),
+                            Vec3.ZERO,
                             0f,
                             0f
                     );
-                    PacketPlayOutEntityTeleport packet =
-                            new PacketPlayOutEntityTeleport(
-                                    stand.aA(),
+                    ClientboundTeleportEntityPacket packet =
+                            new ClientboundTeleportEntityPacket(
+                                    stand.getId(),
                                     pmr,
                                     Set.of(), // absolute teleport
                                     false
@@ -207,20 +207,20 @@ public class CardReveal implements com.kooy29.liarslounge.api.animation.ICardRev
         }.runTaskTimer(instance, 0L, 1L);
     }
 
-    private void teleportAll(Player viewer, List<EntityArmorStand> stands, List<Location> baseLocations, double y) {
+    private void teleportAll(Player viewer, List<ArmorStand> stands, List<Location> baseLocations, double y) {
         for (int i = 0; i < stands.size(); i++) {
             Location base = baseLocations.get(i);
-            EntityArmorStand stand = stands.get(i);
-            stand.a(base.getX(), y, base.getZ(), 0f, 0f);
+            ArmorStand stand = stands.get(i);
+            stand.absSnapTo(base.getX(), y, base.getZ(), 0f, 0f);
             var pmr = new PositionMoveRotation(
-                    stand.dI(),
-                    Vec3D.c,
+                    stand.position(),
+                    Vec3.ZERO,
                     0f,
                     0f
             );
-            PacketPlayOutEntityTeleport packet =
-                    new PacketPlayOutEntityTeleport(
-                            stand.aA(),
+            ClientboundTeleportEntityPacket packet =
+                    new ClientboundTeleportEntityPacket(
+                            stand.getId(),
                             pmr,
                             Set.of(), // absolute teleport
                             false
@@ -229,9 +229,9 @@ public class CardReveal implements com.kooy29.liarslounge.api.animation.ICardRev
         }
     }
 
-    private void destroyAll(Player viewer, List<EntityArmorStand> stands) {
-        int[] ids = stands.stream().mapToInt(EntityArmorStand::aA).toArray();
-        VersionWrapper.sendPacket(viewer, new PacketPlayOutEntityDestroy(ids));
+    private void destroyAll(Player viewer, List<ArmorStand> stands) {
+        int[] ids = stands.stream().mapToInt(ArmorStand::getId).toArray();
+        VersionWrapper.sendPacket(viewer, new ClientboundRemoveEntitiesPacket(ids));
         stands.clear();
     }
 

@@ -4,7 +4,6 @@ import com.kooy29.liarslounge.LiarsLounge;
 import com.kooy29.liarslounge.arena.ArenaSetupSession;
 import com.kooy29.liarslounge.commands.SubCommand;
 import com.kooy29.liarslounge.storage.yaml.MsgPath;
-import com.kooy29.liarslounge.utils.ExtraUtil;
 import com.kooy29.liarslounge.utils.MsgUtil;
 import org.bukkit.GameMode;
 import org.bukkit.World;
@@ -60,14 +59,12 @@ public class SetupCommand implements SubCommand {
         }
 
 
-        World world = player.getServer().getWorld(args[1]);
+        World world = instance.getVersionWrapper().loadExistingWorld(args[1], "minecraft");
         if (world == null) {
-            world = ExtraUtil.loadExistingWorld(args[1]);
-            if (world == null) {
                 MsgUtil.sendMessage(player, MsgUtil.getConfigMessage(MsgPath.Error.WORLD_NOT_FOUND).replace("%world%", args[1]));
                 return;
-            }
         }
+
         // Start the setup session
         if (LiarsLounge.getInstance().getArenaManager().arenaExists(arenaName)) {
             MsgUtil.sendConfigMessage(player, MsgPath.Error.REQUIRES_ARENA_DISABLED);

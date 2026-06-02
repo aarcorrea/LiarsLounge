@@ -1,4 +1,4 @@
-package com.kooy29.liarslounge.nms.v1_21_R7.hologram;
+package com.kooy29.liarslounge.nms.paper.hologram;
 
 import com.kooy29.liarslounge.api.arena.IArena;
 import com.kooy29.liarslounge.api.hologram.IHologram;

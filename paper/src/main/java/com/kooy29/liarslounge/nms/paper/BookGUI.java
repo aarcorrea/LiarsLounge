@@ -1,4 +1,4 @@
-package com.kooy29.liarslounge.nms.paper_v1_21_R7;
+package com.kooy29.liarslounge.nms.paper;
 
 import com.kooy29.liarslounge.api.gui.IBookGUI;
 import com.kooy29.liarslounge.utils.MsgUtil;

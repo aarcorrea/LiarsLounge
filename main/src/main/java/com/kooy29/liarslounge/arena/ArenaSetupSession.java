@@ -5,7 +5,6 @@ import com.kooy29.liarslounge.api.arena.IArenaSetupSession;
 import com.kooy29.liarslounge.storage.yaml.ArenaConfig;
 import com.kooy29.liarslounge.storage.yaml.ConfigPath;
 import com.kooy29.liarslounge.storage.yaml.MsgPath;
-import com.kooy29.liarslounge.utils.ExtraUtil;
 import com.kooy29.liarslounge.utils.MsgUtil;
 import org.bukkit.Bukkit;
 import org.bukkit.Location;
@@ -36,16 +35,11 @@ public class ArenaSetupSession implements IArenaSetupSession {
         this.arenaName = arenaName;
         File file = new File(instance.getDataFolder() + "/arenas", arenaName + ".yml");
         if (file.exists()) {
-            MsgUtil.sendConfigMessage(player, MsgPath.Error.FOUND_SAVED_ARENA);
-
             FileConfiguration config = new ArenaConfig(arenaName, file).getConfig();
 
             String worldName = config.getString(ConfigPath.ARENA_WORLD);
-            this.world = Bukkit.getWorld(worldName);
-            if (world == null) {
-                ExtraUtil.loadExistingWorld(worldName);
-                this.world = Bukkit.getWorld(worldName);
-            }
+            String namespace = config.getString(ConfigPath.ARENA_WORLD_NAMESPACE, "minecraft");
+            this.world = instance.getVersionWrapper().loadExistingWorld(worldName, namespace);
             ConfigurationSection waiting = config.getConfigurationSection(ConfigPath.ARENA_WAITING + ConfigPath.LOCATION);
             this.waitingLocation = new Location(this.world, waiting.getDouble("x"), waiting.getDouble("y"), waiting.getDouble("z"), (float) waiting.getDouble("yaw"), (float) waiting.getDouble("pitch"));
             ConfigurationSection table = config.getConfigurationSection(ConfigPath.ARENA_TABLE + ConfigPath.LOCATION);

@@ -69,13 +69,20 @@ public final class LiarsLounge extends JavaPlugin implements API {
 
         String version = Bukkit.getServer().getClass().getName().split("\\.")[3];
         String mcVersion = Bukkit.getServer().getBukkitVersion().split("-")[0];
-        switch (mcVersion) {
-            case "1.21.11":
-                version = "v1_21_R7";
-                APIProvider.isHigherVersion = true;
-                break;
-            default:
-                break;
+
+        // In-case we add support for other versions besides paper
+//        switch (mcVersion) {
+//            case "1.21.11":
+//                version = "v1_21_R7";
+//                APIProvider.isHigherVersion = true;
+//                break;
+//            default:
+//                break;
+//        }
+
+        if (isModernPaper(mcVersion)) {
+            version = "paper";
+            APIProvider.isHigherVersion = true;
         }
 
         mainConfig = new Configuration("config.yml", true);
@@ -95,18 +102,14 @@ public final class LiarsLounge extends JavaPlugin implements API {
             AnimationUtil.setAnimationClass(cardReveal, cardThrow, liarCall, tableCard);
             Object eventListener = Class.forName("com.kooy29.liarslounge.nms." + version + ".Listeners").getConstructors()[0].newInstance(new WrapperMethods(), this);
             getServer().getPluginManager().registerEvents((Listener) eventListener, this);
-            if (APIProvider.isHigherVersion) {
-                bookGUI = (IBookGUI) Class.forName("com.kooy29.liarslounge.nms.paper_" + version + ".BookGUI").getConstructors()[0].newInstance();
-                Object paperEventListener = Class.forName("com.kooy29.liarslounge.nms.paper_" + version + ".Listeners").getConstructors()[0].newInstance();
-                getServer().getPluginManager().registerEvents((Listener) paperEventListener, this);
-            } else {
-                bookGUI = new BookGUI();
-            }
+            if (APIProvider.isHigherVersion)
+                bookGUI = (IBookGUI) Class.forName("com.kooy29.liarslounge.nms." + version + ".BookGUI").getConstructors()[0].newInstance();
+            else bookGUI = new BookGUI();
             customConnectionWrapper = (CustomConnectionWrapper) Class.forName("com.kooy29.liarslounge.nms." + version + ".CustomConnection")
                     .getConstructors()[0].newInstance(this, new WrapperMethods());
-            sendConsoleMessage("&7Found Supported Version: &e" + version);
+            sendConsoleMessage("&7Found Supported Version: &e" + version + " (" + mcVersion + ")");
         } catch (ClassNotFoundException e) {
-            sendConsoleMessage("&cUnsupported server version: " + version);
+            sendConsoleMessage("&cUnsupported server version: " + version + " (" + mcVersion + ")");
             e.printStackTrace();
             Bukkit.getPluginManager().disablePlugin(this);
             return;
@@ -235,5 +238,20 @@ public final class LiarsLounge extends JavaPlugin implements API {
 
     public IBookGUI getBookGUI() {
         return bookGUI;
+    }
+
+    private boolean isModernPaper(String version) {
+        String[] split = version.split("\\.");
+
+        int major = Integer.parseInt(split[0]);
+        int minor = Integer.parseInt(split[1]);
+        int patch = split.length > 2 ? Integer.parseInt(split[2]) : 0;
+
+        // new versioning
+        if (major >= 26) {
+            return true;
+        }
+
+        return minor > 20 || (minor == 20 && patch >= 5);
     }
 }

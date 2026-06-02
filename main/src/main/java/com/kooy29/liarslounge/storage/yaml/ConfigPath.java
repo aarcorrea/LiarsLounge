@@ -6,6 +6,7 @@ public class ConfigPath {
 
     public static final String ARENA_ENABLED = "enabled";
     public static final String ARENA_WORLD = "world";
+    public static final String ARENA_WORLD_NAMESPACE = "world-namespace"; // for paper 26.1+
     public static final String ARENA_GROUP = "group";
     public static final String LOCATION = ".location";
     public static final String ARENA_WAITING = "waiting";

@@ -1,15 +1,15 @@
-package com.kooy29.liarslounge.nms.v1_21_R7.animation;
+package com.kooy29.liarslounge.nms.paper.animation;
 
 import com.kooy29.liarslounge.api.animation.ITableCard;
 import com.kooy29.liarslounge.api.arena.IArena;
 import com.kooy29.liarslounge.api.arena.IArenaManager;
-import com.kooy29.liarslounge.nms.v1_21_R7.VersionWrapper;
+import com.kooy29.liarslounge.nms.paper.VersionWrapper;
 import com.kooy29.liarslounge.storage.yaml.MsgPath;
 import com.kooy29.liarslounge.storage.yaml.SoundsPath;
 import com.kooy29.liarslounge.utils.MsgUtil;
 import com.kooy29.liarslounge.utils.SoundUtil;
-import net.minecraft.network.protocol.game.PacketPlayOutEntity;
-import net.minecraft.network.protocol.game.PacketPlayOutEntityDestroy;
+import net.minecraft.network.protocol.game.ClientboundMoveEntityPacket;
+import net.minecraft.network.protocol.game.ClientboundRemoveEntitiesPacket;
 import org.bukkit.Location;
 import org.bukkit.entity.Player;
 import org.bukkit.plugin.java.JavaPlugin;
@@ -55,7 +55,7 @@ public class TableCard implements ITableCard {
                 if (arena.isEnding()) {
                     cancel();
                     for (Player p : arena.getWorld().getPlayers()) {
-                        PacketPlayOutEntityDestroy destroy = new PacketPlayOutEntityDestroy(armorStand.getId());
+                        ClientboundRemoveEntitiesPacket destroy = new ClientboundRemoveEntitiesPacket(armorStand.getId());
                         arena.sendDebugMsg("TableCard.java - sending destroy tick to viewer " + p.getName() + " Cause = ArenaEnding");
                         VersionWrapper.sendPacket(p, destroy);
                     }
@@ -66,7 +66,7 @@ public class TableCard implements ITableCard {
                 if (tickCount >= 95) {
                     cancel();
                     for (Player p : arena.getWorld().getPlayers()) {
-                        PacketPlayOutEntityDestroy destroy = new PacketPlayOutEntityDestroy(armorStand.getId());
+                        ClientboundRemoveEntitiesPacket destroy = new ClientboundRemoveEntitiesPacket(armorStand.getId());
                         arena.sendDebugMsg("TableCard.java - sending destroy tick to viewer " + p.getName());
                         VersionWrapper.sendPacket(p, destroy);
                     }
@@ -95,8 +95,8 @@ public class TableCard implements ITableCard {
                 armorStand.setYaw(currentYaw);
                 short protocolDeltaY = (short) Math.clamp(deltaY * 4096,
                         Short.MIN_VALUE, Short.MAX_VALUE);
-                PacketPlayOutEntity.PacketPlayOutRelEntityMoveLook moveLookPacket =
-                        new PacketPlayOutEntity.PacketPlayOutRelEntityMoveLook(
+                ClientboundMoveEntityPacket.PosRot moveLookPacket =
+                        new ClientboundMoveEntityPacket.PosRot(
                                 armorStand.getId(),
                                 (short) 0,
                                 protocolDeltaY,

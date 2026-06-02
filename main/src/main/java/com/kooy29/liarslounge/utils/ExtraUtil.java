@@ -9,7 +9,6 @@ import com.kooy29.liarslounge.storage.yaml.ValuesPath;
 import org.bukkit.Bukkit;
 import org.bukkit.Location;
 import org.bukkit.World;
-import org.bukkit.WorldCreator;
 import org.bukkit.block.Block;
 import org.bukkit.block.BlockFace;
 import org.bukkit.command.CommandSender;
@@ -22,7 +21,6 @@ import org.bukkit.inventory.ItemStack;
 import org.bukkit.material.MaterialData;
 import org.bukkit.material.Stairs;
 
-import java.io.File;
 import java.lang.reflect.Method;
 
 public class ExtraUtil {
@@ -83,10 +81,10 @@ public class ExtraUtil {
     }
 
     public static void spawnSeat(Location loc, Player p) {
-        double forwardOffset = 0.15; // Adjust this value (bw 0.1 to 0.3)
+        double forwardOffset = 0.15;
 
         if (APIProvider.isHigherVersion)
-            loc = loc.getBlock().getLocation().clone().add(0.5, 0.5, 0.5);
+            loc = loc.getBlock().getLocation().clone().add(0.5, 0.55, 0.5);
         else
             loc = loc.getBlock().getLocation().clone().add(0.5, 0.3, 0.5);
 
@@ -119,13 +117,13 @@ public class ExtraUtil {
             case SOUTH:
                 loc.setYaw(isLegacy ? 0 : -180);
                 if (APIProvider.isHigherVersion) {
-                    loc.add(0, 0, forwardOffset);
+                    loc.add(0, 0, -forwardOffset);
                 }
                 break;
             case EAST:
                 loc.setYaw(isLegacy ? -90 : 90);
                 if (APIProvider.isHigherVersion) {
-                    loc.add(forwardOffset, 0, 0);
+                    loc.add(-forwardOffset, 0, 0);
                 }
                 break;
             case WEST:
@@ -159,18 +157,6 @@ public class ExtraUtil {
         if (isSeat(entity)) {
             entity.remove();
         }
-    }
-
-    public static World loadExistingWorld(String worldName) {
-        World world = Bukkit.getWorld(worldName);
-        if (world != null) return world;
-        File worldFolder = new File(Bukkit.getWorldContainer(), worldName);
-        if (!worldFolder.exists()) {
-            Bukkit.getLogger().warning("World folder '" + worldName + "' does not exist.");
-            return null;
-        }
-
-        return new WorldCreator(worldName).createWorld();
     }
 
     public static void setGameRules(World world) {

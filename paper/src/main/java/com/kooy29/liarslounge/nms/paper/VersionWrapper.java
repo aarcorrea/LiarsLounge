@@ -1,16 +1,19 @@
-package com.kooy29.liarslounge.nms.v1_21_R7;
+package com.kooy29.liarslounge.nms.paper;
 
+import com.destroystokyo.paper.profile.PlayerProfile;
 import com.google.gson.JsonObject;
 import com.google.gson.JsonParser;
 import com.kooy29.liarslounge.api.nms.IVersionWrapper;
-import net.md_5.bungee.api.ChatColor;
-import net.md_5.bungee.api.ChatMessageType;
-import net.md_5.bungee.api.chat.TextComponent;
+import net.kyori.adventure.text.Component;
+import net.kyori.adventure.text.serializer.legacy.LegacyComponentSerializer;
+import net.kyori.adventure.title.Title;
 import net.minecraft.network.protocol.Packet;
-import net.minecraft.server.network.PlayerConnection;
+import net.minecraft.server.network.ServerGamePacketListenerImpl;
 import org.bukkit.Bukkit;
 import org.bukkit.NamespacedKey;
-import org.bukkit.craftbukkit.v1_21_R7.entity.CraftPlayer;
+import org.bukkit.World;
+import org.bukkit.WorldCreator;
+import org.bukkit.craftbukkit.entity.CraftPlayer;
 import org.bukkit.entity.Player;
 import org.bukkit.inventory.ItemStack;
 import org.bukkit.inventory.meta.ItemMeta;
@@ -18,13 +21,16 @@ import org.bukkit.inventory.meta.SkullMeta;
 import org.bukkit.persistence.PersistentDataContainer;
 import org.bukkit.persistence.PersistentDataType;
 import org.bukkit.plugin.Plugin;
-import org.bukkit.profile.PlayerProfile;
+import org.bukkit.potion.PotionEffect;
+import org.bukkit.potion.PotionEffectType;
+import org.bukkit.profile.PlayerTextures;
 import org.bukkit.scoreboard.Scoreboard;
 import org.bukkit.scoreboard.Team;
 
 import java.net.URI;
 import java.net.URL;
 import java.nio.charset.StandardCharsets;
+import java.time.Duration;
 import java.util.Base64;
 import java.util.Collection;
 import java.util.UUID;
@@ -81,13 +87,13 @@ public class VersionWrapper implements IVersionWrapper {
     }
 
     public static void sendPacket(Player player, Packet<?> packet) {
-        ((CraftPlayer) player).getHandle().g.b(packet);
+        ((CraftPlayer) player).getHandle().connection.send(packet);
     }
 
     public static void sendPackets(Player player, Packet<?>... packets) {
-        PlayerConnection connection = ((CraftPlayer) player).getHandle().g;
+        ServerGamePacketListenerImpl connection = ((CraftPlayer) player).getHandle().connection;
         for (Packet<?> packet : packets) {
-            connection.b(packet);
+            connection.send(packet);
         }
     }
 
@@ -129,20 +135,23 @@ public class VersionWrapper implements IVersionWrapper {
 
     @Override
     public void sendActionBar(String message, Player player) {
-        player.spigot().sendMessage(
-                ChatMessageType.ACTION_BAR,
-                new TextComponent(ChatColor.translateAlternateColorCodes('&', message))
+        player.sendActionBar(
+                LegacyComponentSerializer.legacyAmpersand()
+                        .deserialize(message)
         );
     }
 
     @Override
     public void sendTitle(Player player, String title, String subtitle,
                           int fadeIn, int stay, int fadeOut) {
-        player.sendTitle(
-                title == null ? " " : title,
-                subtitle == null ? " " : subtitle,
-                fadeIn, stay, fadeOut
-        );
+        player.showTitle(Title.title(
+                Component.text(title == null ? " " : title),
+                Component.text(subtitle == null ? " " : subtitle),
+                Title.Times.times(
+                        Duration.ofMillis(fadeIn * 50L),
+                        Duration.ofMillis(stay * 50L),
+                        Duration.ofMillis(fadeOut * 50L))
+        ));
     }
 
     private Team getOrCreateTeam(Scoreboard board) {
@@ -185,13 +194,45 @@ public class VersionWrapper implements IVersionWrapper {
         URL skinUrl = getUrlFromBase64(texture);
         if (skinUrl == null) return stack;
 
-        PlayerProfile profile = Bukkit.createPlayerProfile(UUID.randomUUID());
-        profile.getTextures().setSkin(skinUrl);
+        PlayerProfile profile = Bukkit.createProfile(UUID.randomUUID());
+        PlayerTextures textures = profile.getTextures();
+        textures.setSkin(skinUrl);
+        profile.setTextures(textures);
 
-        SkullMeta meta2 = (SkullMeta) stack.getItemMeta();
-        meta2.setOwnerProfile(profile);
-        stack.setItemMeta(meta2);
+        SkullMeta itemMeta = (SkullMeta) stack.getItemMeta();
+        itemMeta.setPlayerProfile(profile);
+        stack.setItemMeta(itemMeta);
 
         return stack;
+    }
+
+    public void potionEffect(Player player, boolean punish) {
+        if (punish) {
+            player.addPotionEffect(new PotionEffect(PotionEffectType.SLOWNESS, 200, 4, false, false, false));
+            player.addPotionEffect(new PotionEffect(PotionEffectType.BLINDNESS, 200, 0, false, false, false));
+        } else {
+            player.addPotionEffect(new PotionEffect(PotionEffectType.SLOWNESS, 200, 4, false, false, false));
+        }
+    }
+
+    @Override
+    public World loadExistingWorld(String worldName, String namespace) {
+        World world = Bukkit.getWorld(worldName);
+        if (world != null) {
+            return world;
+        }
+
+        try {
+            return Bukkit.createWorld(
+                    WorldCreator.ofKey(
+                            new NamespacedKey(namespace, worldName)
+                    )
+            );
+        } catch (Exception ex) {
+            // Legacy Paper world migration
+            return Bukkit.createWorld(
+                    new WorldCreator(worldName)
+            );
+        }
     }
 }

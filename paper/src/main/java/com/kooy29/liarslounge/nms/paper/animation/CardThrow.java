@@ -1,17 +1,17 @@
-package com.kooy29.liarslounge.nms.v1_21_R7.animation;
+package com.kooy29.liarslounge.nms.paper.animation;
 
 import com.kooy29.liarslounge.api.animation.ICardThrow;
 import com.kooy29.liarslounge.api.arena.IArena;
 import com.kooy29.liarslounge.api.arena.IArenaManager;
-import com.kooy29.liarslounge.nms.v1_21_R7.VersionWrapper;
+import com.kooy29.liarslounge.nms.paper.VersionWrapper;
 import com.kooy29.liarslounge.storage.yaml.SoundsPath;
 import com.kooy29.liarslounge.utils.SoundUtil;
-import net.minecraft.network.protocol.game.PacketPlayOutEntityDestroy;
-import net.minecraft.network.protocol.game.PacketPlayOutEntityTeleport;
+import net.minecraft.network.protocol.game.ClientboundRemoveEntitiesPacket;
+import net.minecraft.network.protocol.game.ClientboundTeleportEntityPacket;
 import net.minecraft.world.entity.Entity;
 import net.minecraft.world.entity.PositionMoveRotation;
-import net.minecraft.world.entity.decoration.EntityArmorStand;
-import net.minecraft.world.phys.Vec3D;
+import net.minecraft.world.entity.decoration.ArmorStand;
+import net.minecraft.world.phys.Vec3;
 import org.bukkit.Bukkit;
 import org.bukkit.Color;
 import org.bukkit.Location;
@@ -33,7 +33,7 @@ public class CardThrow implements ICardThrow {
     private final double tableLandingYOffset = 0.3;
     private final double dropDistance = 0.7;
 
-    private final Map<UUID, List<EntityArmorStand>> viewerEntityIds = new HashMap<>();
+    private final Map<UUID, List<ArmorStand>> viewerEntityIds = new HashMap<>();
     private final Map<Integer, Location> entityPositions = new HashMap<>();
     private final List<Integer> scheduledTaskIds = new ArrayList<>();
     private final Map<Integer, Location> throwerCardTargets = new HashMap<>();
@@ -119,7 +119,7 @@ public class CardThrow implements ICardThrow {
         arena.sendDebugMsg("CardThrow.java - Spawning card for viewer" + viewer.getName() + " Thrower = " + thrower.getName());
         Location start = thrower.getLocation().clone().add(0, startYOffset, 0);
 
-        EntityArmorStand stand = new ArmorStandBuilder(target.getWorld())
+        ArmorStand stand = new ArmorStandBuilder(target.getWorld())
                 .setInvisible(true)
                 .setSmall(true)
                 .setGravity(false)
@@ -131,7 +131,7 @@ public class CardThrow implements ICardThrow {
 
         SoundUtil.playSound(viewer, SoundsPath.Card.THROW);
 
-        int entityId = stand.aA();
+        int entityId = stand.getId();
         viewerEntityIds.computeIfAbsent(viewer.getUniqueId(), k -> new ArrayList<>()).add(stand);
         entityPositions.put(entityId, start.clone());
 
@@ -222,16 +222,16 @@ public class CardThrow implements ICardThrow {
             @Override
             public void run() {
                 double perTick = dropDistance / closeTicks;
-                Iterator<Map.Entry<UUID, List<EntityArmorStand>>> it = viewerEntityIds.entrySet().iterator();
+                Iterator<Map.Entry<UUID, List<ArmorStand>>> it = viewerEntityIds.entrySet().iterator();
                 while (it.hasNext()) {
-                    Map.Entry<UUID, List<EntityArmorStand>> entry = it.next();
+                    Map.Entry<UUID, List<ArmorStand>> entry = it.next();
                     Player viewer = Bukkit.getPlayer(entry.getKey());
                     if (viewer == null || !viewer.isOnline()) {
                         it.remove();
                         continue;
                     }
-                    for (EntityArmorStand stand : entry.getValue()) {
-                        Location pos = entityPositions.get(stand.aA());
+                    for (ArmorStand stand : entry.getValue()) {
+                        Location pos = entityPositions.get(stand.getId());
                         if (pos == null) continue;
                         pos.subtract(0, perTick, 0);
                         sendTeleport(viewer, stand, pos);
@@ -241,12 +241,12 @@ public class CardThrow implements ICardThrow {
                 tick++;
                 if (tick > closeTicks) {
                     cancel();
-                    for (Map.Entry<UUID, List<EntityArmorStand>> entry : viewerEntityIds.entrySet()) {
+                    for (Map.Entry<UUID, List<ArmorStand>> entry : viewerEntityIds.entrySet()) {
                         Player viewer = Bukkit.getPlayer(entry.getKey());
                         if (viewer == null || !viewer.isOnline()) continue;
                         if (!entry.getValue().isEmpty()) {
-                            int[] arr = entry.getValue().stream().mapToInt(Entity::aA).toArray();
-                            PacketPlayOutEntityDestroy destroy = new PacketPlayOutEntityDestroy(arr);
+                            int[] arr = entry.getValue().stream().mapToInt(Entity::getId).toArray();
+                            ClientboundRemoveEntitiesPacket destroy = new ClientboundRemoveEntitiesPacket(arr);
                             VersionWrapper.sendPacket(viewer, destroy);
                             arena.sendDebugMsg("CardThrow.java - Destroying for viewer " + viewer.getName() + " Cause = AnimationEnd");
                         }
@@ -276,12 +276,12 @@ public class CardThrow implements ICardThrow {
             closeTask = null;
         }
 
-        for (Map.Entry<UUID, List<EntityArmorStand>> e : viewerEntityIds.entrySet()) {
+        for (Map.Entry<UUID, List<ArmorStand>> e : viewerEntityIds.entrySet()) {
             Player viewer = Bukkit.getPlayer(e.getKey());
             if (viewer == null || !viewer.isOnline()) continue;
             if (!e.getValue().isEmpty()) {
-                int[] arr = e.getValue().stream().mapToInt(Entity::aA).toArray();
-                PacketPlayOutEntityDestroy destroy = new PacketPlayOutEntityDestroy(arr);
+                int[] arr = e.getValue().stream().mapToInt(Entity::getId).toArray();
+                ClientboundRemoveEntitiesPacket destroy = new ClientboundRemoveEntitiesPacket(arr);
                 VersionWrapper.sendPacket(viewer, destroy);
                 arena.sendDebugMsg("CardThrow.java - Destroying for viewer " + viewer.getName() + " Cause = ForceStop");
             }
@@ -292,21 +292,21 @@ public class CardThrow implements ICardThrow {
         throwerCardTargets.clear();
     }
 
-    private void sendTeleport(Player viewer, EntityArmorStand entity, Location loc) {
+    private void sendTeleport(Player viewer, ArmorStand entity, Location loc) {
         arena.sendDebugMsg("CardThrow.java - Teleporting for viewer " + viewer.getName());
 
-        entity.a(loc.getX(),
+        entity.absSnapTo(loc.getX(),
                 loc.getY(),
                 loc.getZ(), 0f, 0f);
         var pmr = new PositionMoveRotation(
-                entity.dJ(),
-                new Vec3D(0, 0, 0),
+                entity.position(),
+                new Vec3(0, 0, 0),
                 0f,
                 0f
         );
-        PacketPlayOutEntityTeleport packet =
-                new PacketPlayOutEntityTeleport(
-                        entity.aA(),
+        ClientboundTeleportEntityPacket packet =
+                new ClientboundTeleportEntityPacket(
+                        entity.getId(),
                         pmr,
                         Set.of(),
                         false

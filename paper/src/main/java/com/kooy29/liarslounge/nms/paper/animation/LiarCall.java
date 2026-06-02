@@ -1,23 +1,23 @@
-package com.kooy29.liarslounge.nms.v1_21_R7.animation;
+package com.kooy29.liarslounge.nms.paper.animation;
 
 import com.kooy29.liarslounge.api.animation.ILiarCall;
 import com.kooy29.liarslounge.api.arena.IArena;
 import com.kooy29.liarslounge.api.nms.IWrapperMethods;
-import com.kooy29.liarslounge.nms.v1_21_R7.VersionWrapper;
+import com.kooy29.liarslounge.nms.paper.VersionWrapper;
 import com.kooy29.liarslounge.storage.yaml.SoundsPath;
 import com.kooy29.liarslounge.utils.SoundUtil;
 import com.mojang.datafixers.util.Pair;
-import net.minecraft.core.Vector3f;
+import net.minecraft.core.Rotations;
 import net.minecraft.network.protocol.game.*;
-import net.minecraft.world.entity.EnumItemSlot;
+import net.minecraft.world.entity.EquipmentSlot;
 import net.minecraft.world.entity.PositionMoveRotation;
-import net.minecraft.world.entity.decoration.EntityArmorStand;
-import net.minecraft.world.phys.Vec3D;
+import net.minecraft.world.entity.decoration.ArmorStand;
+import net.minecraft.world.phys.Vec3;
 import org.bukkit.Bukkit;
 import org.bukkit.Location;
 import org.bukkit.Material;
 import org.bukkit.Particle;
-import org.bukkit.craftbukkit.v1_21_R7.inventory.CraftItemStack;
+import org.bukkit.craftbukkit.inventory.CraftItemStack;
 import org.bukkit.entity.Player;
 import org.bukkit.inventory.ItemStack;
 import org.bukkit.plugin.java.JavaPlugin;
@@ -33,9 +33,9 @@ import java.util.Set;
 public class LiarCall implements ILiarCall {
 
     IArena arena;
-    HashMap<Player, EntityArmorStand> stands = new HashMap<>();
+    HashMap<Player, ArmorStand> stands = new HashMap<>();
     Location nonStrikeLoc = null;
-    private JavaPlugin instance;
+    private final JavaPlugin instance;
 
     // TODO: if player instantly joins & leaves liarcall animation may not complete, all ver
 
@@ -47,14 +47,14 @@ public class LiarCall implements ILiarCall {
     @Override
     public void clearOldData() {
         for (Player player : new ArrayList<>(stands.keySet())) {
-            EntityArmorStand stand = stands.get(player);
+            ArmorStand stand = stands.get(player);
             if (stand != null) {
-                PacketPlayOutEntityDestroy destroyPacket = new PacketPlayOutEntityDestroy(stand.aA());
+                ClientboundRemoveEntitiesPacket destroyPacket = new ClientboundRemoveEntitiesPacket(stand.getId());
                 for (Player p : arena.getWorld().getPlayers()) {
                     VersionWrapper.sendPacket(p, destroyPacket);
                 }
                 stands.remove(player);
-                IWrapperMethods.armorStands.remove(stand.aA());
+                IWrapperMethods.armorStands.remove(stand.getId());
             }
         }
     }
@@ -83,7 +83,7 @@ public class LiarCall implements ILiarCall {
         newLoc.add(backX, 0, backZ);
 
 
-        EntityArmorStand stand;
+        ArmorStand stand;
         if (stands.containsKey(player)) {
             stand = stands.get(player);
         } else {
@@ -98,21 +98,21 @@ public class LiarCall implements ILiarCall {
 
         ItemStack axe = new ItemStack(Material.GOLDEN_AXE);
         stands.put(player, stand);
-        stand.d(new Vector3f(0f, 0f, 90f));
-        IWrapperMethods.armorStands.add(stand.aA());
+        stand.setRightArmPose(new Rotations(0f, 0f, 90f));
+        IWrapperMethods.armorStands.add(stand.getId());
         for (Player p : actionItemLoc.getWorld().getPlayers()) {
             VersionWrapper.sendPackets(p,
                     ArmorStandBuilder.packetPlayOutSpawnEntity(stand),
-                    new PacketPlayOutEntityEquipment(stand.aA(), List.of(Pair.of(EnumItemSlot.a, CraftItemStack.asNMSCopy(axe)))),
-                    new PacketPlayOutEntityMetadata(stand.aA(), stand.aD().c()));
+                    new ClientboundSetEquipmentPacket(stand.getId(), List.of(Pair.of(EquipmentSlot.MAINHAND, CraftItemStack.asNMSCopy(axe)))),
+                    new ClientboundSetEntityDataPacket(stand.getId(), stand.getEntityData().getNonDefaultValues()));
         }
     }
 
     @Override
     public void moveToPlayer(Player player, Runnable task) {
-        EntityArmorStand stand = stands.get(player);
+        ArmorStand stand = stands.get(player);
         if (stand == null) return;
-        nonStrikeLoc = new Location(null, stand.dP(), stand.dR(), stand.dV(), stand.ec(), stand.ee());
+        nonStrikeLoc = new Location(null, stand.getX(), stand.getY(), stand.getZ(), stand.getYRot(), stand.getXRot());
 
         Location startLoc = stand.getBukkitEntity().getLocation();
         Location playerLoc = player.getLocation();
@@ -136,9 +136,9 @@ public class LiarCall implements ILiarCall {
         Vector stepVec = moveVec.multiply(1.0 / steps);
 
         byte yawByte = (byte) (yawF * 256 / 360);
-        PacketPlayOutEntity.PacketPlayOutEntityLook packetHeadRot =
-                new PacketPlayOutEntity.PacketPlayOutEntityLook(
-                        stand.aA(),
+        ClientboundMoveEntityPacket.Rot packetHeadRot =
+                new ClientboundMoveEntityPacket.Rot(
+                        stand.getId(),
                         yawByte,
                         (byte) 0,
                         true
@@ -151,7 +151,7 @@ public class LiarCall implements ILiarCall {
 
         new BukkitRunnable() {
             int tick = 0;
-            Location currentLoc = startLoc.clone();
+            final Location currentLoc = startLoc.clone();
 
             @Override
             public void run() {
@@ -164,19 +164,19 @@ public class LiarCall implements ILiarCall {
                 currentLoc.add(stepVec);
 
                 // Always set yaw so it stays correct
-                stand.a(currentLoc.getX(), currentLoc.getY(), currentLoc.getZ(), yawF, 0f);
+                stand.absSnapTo(currentLoc.getX(), currentLoc.getY(), currentLoc.getZ(), yawF, 0f);
 
                 // Send teleport with correct yaw
 //                PacketPlayOutEntityTeleport teleportPacket = new PacketPlayOutEntityTeleport(stand);
                 var pmr = new PositionMoveRotation(
-                        stand.dI(),
-                        Vec3D.c,
+                        stand.position(),
+                        Vec3.ZERO,
                         yawF,
                         0f
                 );
-                PacketPlayOutEntityTeleport packet =
-                        new PacketPlayOutEntityTeleport(
-                                stand.aA(),
+                ClientboundTeleportEntityPacket packet =
+                        new ClientboundTeleportEntityPacket(
+                                stand.getId(),
                                 pmr,
                                 Set.of(), // absolute teleport
                                 false
@@ -193,29 +193,29 @@ public class LiarCall implements ILiarCall {
 
     @Override
     public void moveBackToLoc(Player player) {
-        EntityArmorStand stand = stands.get(player);
+        ArmorStand stand = stands.get(player);
         if (stand == null) return;
-        stand.a(nonStrikeLoc.getX(), nonStrikeLoc.getY(), nonStrikeLoc.getZ(),
+        stand.absSnapTo(nonStrikeLoc.getX(), nonStrikeLoc.getY(), nonStrikeLoc.getZ(),
                 nonStrikeLoc.getYaw(), nonStrikeLoc.getPitch());
 //        PacketPlayOutEntityTeleport teleportPacket = new PacketPlayOutEntityTeleport(stand);
         //                PacketPlayOutEntityTeleport teleportPacket = new PacketPlayOutEntityTeleport(stand);
         var pmr = new PositionMoveRotation(
-                stand.dI(),
-                Vec3D.c,
+                stand.position(),
+                Vec3.ZERO,
                 nonStrikeLoc.getYaw(),
                 nonStrikeLoc.getPitch()
         );
-        PacketPlayOutEntityTeleport packetTeleport =
-                new PacketPlayOutEntityTeleport(
-                        stand.aA(),
+        ClientboundTeleportEntityPacket packetTeleport =
+                new ClientboundTeleportEntityPacket(
+                        stand.getId(),
                         pmr,
                         Set.of(), // absolute teleport
                         false
                 );
         byte yawByte = (byte) (nonStrikeLoc.getYaw() * 256 / 360);
-        PacketPlayOutEntity.PacketPlayOutEntityLook packetHeadRot =
-                new PacketPlayOutEntity.PacketPlayOutEntityLook(
-                        stand.aA(),
+        ClientboundMoveEntityPacket.Rot packetHeadRot =
+                new ClientboundMoveEntityPacket.Rot(
+                        stand.getId(),
                         yawByte,
                         (byte) 0,
                         true
@@ -230,31 +230,31 @@ public class LiarCall implements ILiarCall {
     @Override
     public void playAxeSwing(Player player, boolean fullSwing, Runnable task) {
         arena.sendDebugMsg("Called playAxeSwing!! - " + player.getName());
-        EntityArmorStand stand = stands.get(player);
+        ArmorStand stand = stands.get(player);
         new BukkitRunnable() {
             boolean reloading = true;
-            float bodyYawDegrees = stand.ec();
+            float bodyYawDegrees = stand.getYRot();
 
             @Override
             public void run() {
                 if (!player.isOnline()) {
                     cancel();
-                    destroyAxe(player, stand.aA());
+                    destroyAxe(player, stand.getId());
                     Bukkit.getScheduler().runTaskLater(instance, task, 10L);
                     return;
                 }
                 if (reloading) {
                     bodyYawDegrees -= 1f;
                     byte yawByte = (byte) (bodyYawDegrees * 256 / 360);
-                    PacketPlayOutEntity.PacketPlayOutEntityLook lookPacket =
-                            new PacketPlayOutEntity.PacketPlayOutEntityLook(stand.aA(), yawByte, (byte) 0, true);
+                    ClientboundMoveEntityPacket.Rot lookPacket =
+                            new ClientboundMoveEntityPacket.Rot(stand.getId(), yawByte, (byte) 0, true);
                     for (Player p : arena.getWorld().getPlayers()) {
                         arena.sendDebugMsg("LiarCall.java - sending playAxeSwing of player - " + player.getName() + " to viewer " + p.getName());
                         VersionWrapper.sendPacket(p, lookPacket);
-                        if (stand.ec() - 60 == bodyYawDegrees)
+                        if (stand.getYRot() - 60 == bodyYawDegrees)
                             SoundUtil.playSound(p, SoundsPath.CallLiar.AXE_RELOAD);
                     }
-                    if (stand.ec() - 80 >= bodyYawDegrees) {
+                    if (stand.getYRot() - 80 >= bodyYawDegrees) {
                         reloading = false;
                     }
                 } else {
@@ -264,8 +264,8 @@ public class LiarCall implements ILiarCall {
                     else
                         bodyYawDegrees += 85f; // swing the axe just till neck
                     byte yawByte = (byte) (bodyYawDegrees * 256 / 360);
-                    PacketPlayOutEntity.PacketPlayOutEntityLook lookPacket =
-                            new PacketPlayOutEntity.PacketPlayOutEntityLook(stand.aA(), yawByte, (byte) 0, true);
+                    ClientboundMoveEntityPacket.Rot lookPacket =
+                            new ClientboundMoveEntityPacket.Rot(stand.getId(), yawByte, (byte) 0, true);
                     for (Player p : arena.getWorld().getPlayers()) {
                         arena.sendDebugMsg("LiarCall.java - sending playAxeSwing of player - " + player.getName() + " to viewer " + p.getName() + ", fullSwing: - " + fullSwing);
                         VersionWrapper.sendPacket(p, lookPacket);
@@ -273,16 +273,18 @@ public class LiarCall implements ILiarCall {
                             Bukkit.getScheduler().runTaskLater(instance, () -> SoundUtil.playSound(p, SoundsPath.CallLiar.AXE_FULL_SWING), 1L);
                         } else {
                             Bukkit.getScheduler().runTaskLater(instance, () -> {
-                                Bukkit.getScheduler().runTaskLater(instance, () -> p.getWorld().spawnParticle(Particle.SMOKE, player.getEyeLocation(), 1), 1L);
+                                Bukkit.getScheduler().runTaskLater(instance, () -> p.getWorld().spawnParticle(Particle.SMOKE, player.getEyeLocation(), 2), 1L);
                                 SoundUtil.playSound(p, SoundsPath.CallLiar.AXE_HALF_SWING);
                             }, 1L);
                         }
                     }
-                    Bukkit.getScheduler().runTaskLater(instance, task, 10L);
                     if (fullSwing) {
+                        Bukkit.getScheduler().runTaskLater(instance, task, 10L);
                         Bukkit.getScheduler().runTaskLaterAsynchronously(instance, () -> {
-                            destroyAxe(player, stand.aA());
-                        }, 20L);
+                            destroyAxe(player, stand.getId());
+                        }, 40L);
+                    } else {
+                        Bukkit.getScheduler().runTaskLater(instance, task, 40L);
                     }
                 }
             }
@@ -293,9 +295,9 @@ public class LiarCall implements ILiarCall {
     public void destroyAxe(Player player, int entityId) {
         if (entityId == -1) {
             if (!stands.containsKey(player)) return;
-            entityId = stands.get(player).aA();
+            entityId = stands.get(player).getId();
         }
-        PacketPlayOutEntityDestroy destroyPacket = new PacketPlayOutEntityDestroy(entityId);
+        ClientboundRemoveEntitiesPacket destroyPacket = new ClientboundRemoveEntitiesPacket(entityId);
         IWrapperMethods.armorStands.remove(entityId);
         stands.remove(player);
         for (Player p : arena.getWorld().getPlayers()) {

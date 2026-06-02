@@ -28,8 +28,10 @@ repositories {
 }
 
 processResources {
-    filesMatching('plugin.yml') {
-        expand(version: project.version)
+    inputs.property("version", version)
+
+    filesMatching("plugin.yml") {
+        expand(version: version)
     }
 }
 

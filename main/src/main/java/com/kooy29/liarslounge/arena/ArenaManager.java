@@ -122,6 +122,7 @@ public class ArenaManager implements IArenaManager {
         // arena settings
         section.set(ConfigPath.ARENA_ENABLED, true);
         section.set(ConfigPath.ARENA_WORLD, world.getName());
+        section.set(ConfigPath.ARENA_WORLD_NAMESPACE, "minecraft");
         section.set(ConfigPath.ARENA_GROUP, "default");
 
         // waiting settings

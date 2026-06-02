@@ -30,7 +30,6 @@ import org.bukkit.entity.Entity;
 import org.bukkit.entity.Player;
 import org.bukkit.inventory.ItemStack;
 import org.bukkit.inventory.meta.ItemMeta;
-import org.bukkit.potion.PotionEffect;
 import org.bukkit.potion.PotionEffectType;
 import org.bukkit.scheduler.BukkitRunnable;
 
@@ -82,7 +81,8 @@ public class Arena implements IArena {
         this.valuesConfig = instance.getValuesConfig().getConfig();
         this.arenaConfig = arenaConfig;
         this.group = arenaConfig.getConfig().getString(ConfigPath.ARENA_GROUP, "default");
-        this.world = ExtraUtil.loadExistingWorld(arenaConfig.getConfig().getString(ConfigPath.ARENA_WORLD));
+        String namespace = arenaConfig.getConfig().getString(ConfigPath.ARENA_WORLD_NAMESPACE, "minecraft");
+        this.world = instance.getVersionWrapper().loadExistingWorld(arenaConfig.getConfig().getString(ConfigPath.ARENA_WORLD), namespace);
         ConfigurationSection waiting = arenaConfig.getConfig().getConfigurationSection(ConfigPath.ARENA_WAITING);
         this.minimumPlayers = waiting.getInt(ConfigPath.ARENA_MIN_PLAYERS, 2);
         this.autoStartDelay = waiting.getInt(ConfigPath.ARENA_AUTO_START_DELAY, 20);
@@ -489,12 +489,13 @@ public class Arena implements IArena {
             if (isTruth) {
                 String msg1 = MsgUtil.colorize(MsgUtil.getConfigMessage(MsgPath.Game.CallLiar.NOT_LIAR).replace("%accuser_name%", accuser.bukkitPlayer.getName()).replace("%target_name%", target.bukkitPlayer.getName()));
                 for (Player player : players) {
-                    player.addPotionEffect(new PotionEffect(PotionEffectType.SLOW, 180, 4, false, false));
                     player.sendMessage(msg1);
-                    if (player == accuser.bukkitPlayer)
-                        player.addPotionEffect(new PotionEffect(PotionEffectType.BLINDNESS, 180, 0, false, false));
-                    else
+                    if (player == accuser.bukkitPlayer) {
+                        instance.getVersionWrapper().potionEffect(player, true);
+                    } else {
+                        instance.getVersionWrapper().potionEffect(player, false);
                         SoundUtil.playSound(player, SoundsPath.CallLiar.TRUTH);
+                    }
                 }
                 for (Player player : spectators) {
                     player.sendMessage(msg1);
@@ -504,12 +505,13 @@ public class Arena implements IArena {
             } else {
                 String msg1 = MsgUtil.colorize(MsgUtil.getConfigMessage(MsgPath.Game.CallLiar.IS_LIAR).replace("%accuser_name%", accuser.bukkitPlayer.getName()).replace("%target_name%", target.bukkitPlayer.getName()));
                 for (Player player : players) {
-                    player.addPotionEffect(new PotionEffect(PotionEffectType.SLOW, 180, 4, false, false));
                     player.sendMessage(msg1);
-                    if (player == target.bukkitPlayer)
-                        player.addPotionEffect(new PotionEffect(PotionEffectType.BLINDNESS, 180, 0, false, false));
-                    else
+                    if (player == target.bukkitPlayer) {
+                        instance.getVersionWrapper().potionEffect(player, true);
+                    } else {
+                        instance.getVersionWrapper().potionEffect(player, false);
                         SoundUtil.playSound(player, SoundsPath.CallLiar.LIE);
+                    }
                 }
                 for (Player player : spectators) {
                     player.sendMessage(msg1);
@@ -548,7 +550,7 @@ public class Arena implements IArena {
                         playerHolo.removePlayerHoloFromAll(world, mainPlayer);
                         Bukkit.getScheduler().runTaskLater(instance, () -> {
                             if (!isEnding) restartGame(false);
-                        }, 40L);
+                        }, 60L);
                     });
                 } else {
                     playerStats.forEach(f -> {
@@ -567,7 +569,7 @@ public class Arena implements IArena {
                         currentTurn = players.indexOf(mainPlayer.bukkitPlayer);
                         Bukkit.getScheduler().runTaskLater(instance, () -> {
                             if (!isEnding) restartGame(false);
-                        }, 40L);
+                        }, 30L);
                     });
                 }
             }, 20L);

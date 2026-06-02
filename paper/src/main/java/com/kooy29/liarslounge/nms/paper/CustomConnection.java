@@ -1,11 +1,15 @@
-package com.kooy29.liarslounge.nms.v1_21_R7;
+package com.kooy29.liarslounge.nms.paper;
 
 import com.kooy29.liarslounge.api.nms.CustomConnectionWrapper;
 import com.kooy29.liarslounge.api.nms.IWrapperMethods;
 import io.netty.channel.*;
-import net.minecraft.network.protocol.game.PacketPlayInUseEntity;
+import io.papermc.paper.connection.PaperCommonConnection;
+import net.minecraft.network.Connection;
+import net.minecraft.network.protocol.game.ClientboundSetEquipmentPacket;
+import net.minecraft.network.protocol.game.ServerboundInteractPacket;
+import net.minecraft.server.network.ServerCommonPacketListenerImpl;
 import org.bukkit.Bukkit;
-import org.bukkit.craftbukkit.v1_21_R7.inventory.CraftItemStack;
+import org.bukkit.craftbukkit.inventory.CraftItemStack;
 import org.bukkit.entity.Player;
 import org.bukkit.event.player.PlayerInteractEntityEvent;
 import org.bukkit.plugin.java.JavaPlugin;
@@ -19,17 +23,11 @@ import java.util.concurrent.ConcurrentHashMap;
 
 public class CustomConnection implements CustomConnectionWrapper {
     static Map<UUID, Channel> playerChannelList = new ConcurrentHashMap<>();
-    static boolean isSoftwareObfuscated = getClassByName("net.minecraft.server.network.PlayerConnection") != null;
 
-    static Class<?> nmsNetworkManager = getServerClass(isSoftwareObfuscated ? "network.NetworkManager" : "network.Connection");
+    static Field serverPacketListenerConn = getField(ServerCommonPacketListenerImpl.class, Connection.class, 0);
+    static Field paperConnChannel = getField(Connection.class, Channel.class, 0);
+    static Field paperConnectionHandle = getField(PaperCommonConnection.class, ServerCommonPacketListenerImpl.class, 0);
 
-    static Class<?> serverPacketListener = getServerClass("server.network.ServerCommonPacketListenerImpl");
-    static Field serverPacketListenerConn = getField(serverPacketListener, nmsNetworkManager, 0);
-    static Class<?> nettyChannel = getNettyClass("channel.Channel");
-
-    static Field paperConnChannel = getField(nmsNetworkManager, nettyChannel, 0);
-    static Class<?> paperConnection = getClassByName("io.papermc.paper.connection.PaperCommonConnection");
-    static Field paperConnectionHandle = getField(paperConnection, serverPacketListener, 0);
     JavaPlugin instance;
     IWrapperMethods wrapperMethods;
 
@@ -73,10 +71,6 @@ public class CustomConnection implements CustomConnectionWrapper {
         playerChannelList.put(uuid, channel);
     }
 
-    public static void removeChannel(UUID uuid) {
-        playerChannelList.remove(uuid);
-    }
-
     public static Object getChannelFromPaperConnection(Object paperConnection) {
         try {
             Object packetListener = paperConnectionHandle.get(paperConnection);
@@ -85,22 +79,6 @@ public class CustomConnection implements CustomConnectionWrapper {
         } catch (IllegalAccessException exception) {
             throw new RuntimeException(exception);
         }
-    }
-
-    public static Class<?> getServerClass(String modern) {
-        return getClassByName("net.minecraft." + modern);
-    }
-
-    public static Class<?> getClassByName(String name) {
-        try {
-            return Class.forName(name);
-        } catch (ClassNotFoundException e) {
-            return null;
-        }
-    }
-
-    public static Class<?> getNettyClass(String name) {
-        return getClassByName("io.netty." + name);
     }
 
     public void removePlayer(Player player) {
@@ -116,7 +94,7 @@ public class CustomConnection implements CustomConnectionWrapper {
 
             @Override
             public void channelRead(ChannelHandlerContext channelHandlerContext, Object packet) throws Exception {
-                if (packet instanceof PacketPlayInUseEntity packetUseEntity) {
+                if (packet instanceof ServerboundInteractPacket packetUseEntity) {
                     try {
                         int entityId = getPrivateField(packetUseEntity, "b");
                         if (IWrapperMethods.armorStands.contains(entityId)) {
@@ -132,7 +110,7 @@ public class CustomConnection implements CustomConnectionWrapper {
             @Override
             public void write(ChannelHandlerContext ctx, Object msg, ChannelPromise promise) throws Exception {
 
-                if (msg instanceof net.minecraft.network.protocol.game.PacketPlayOutEntityEquipment packet) {
+                if (msg instanceof ClientboundSetEquipmentPacket packet) {
 
                     if (!wrapperMethods.isPlayerInArena(player)) {
                         super.write(ctx, msg, promise);
@@ -140,10 +118,10 @@ public class CustomConnection implements CustomConnectionWrapper {
                     }
 
                     List<com.mojang.datafixers.util.Pair<
-                            net.minecraft.world.entity.EnumItemSlot,
+                            net.minecraft.world.entity.EquipmentSlot,
                             net.minecraft.world.item.ItemStack>> newList = new ArrayList<>();
 
-                    for (var pair : packet.e()) {
+                    for (var pair : packet.getSlots()) {
                         var slot = pair.getFirst();
                         net.minecraft.world.item.ItemStack item = pair.getSecond();
 
@@ -163,8 +141,8 @@ public class CustomConnection implements CustomConnectionWrapper {
 
                     // create a NEW packet
                     var newPacket =
-                            new net.minecraft.network.protocol.game.PacketPlayOutEntityEquipment(
-                                    packet.b(), // entityId
+                            new net.minecraft.network.protocol.game.ClientboundSetEquipmentPacket(
+                                    packet.getEntity(),
                                     newList
                             );
 

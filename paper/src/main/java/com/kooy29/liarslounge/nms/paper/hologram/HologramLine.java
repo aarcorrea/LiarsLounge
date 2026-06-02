@@ -1,26 +1,26 @@
-package com.kooy29.liarslounge.nms.v1_21_R7.hologram;
+package com.kooy29.liarslounge.nms.paper.hologram;
 
 import com.kooy29.liarslounge.api.hologram.IHologram;
 import com.kooy29.liarslounge.api.hologram.IHologramLine;
-import com.kooy29.liarslounge.nms.v1_21_R7.VersionWrapper;
-import com.kooy29.liarslounge.nms.v1_21_R7.animation.ArmorStandBuilder;
-import net.minecraft.network.protocol.game.PacketPlayOutEntityDestroy;
-import net.minecraft.network.protocol.game.PacketPlayOutEntityMetadata;
-import net.minecraft.network.protocol.game.PacketPlayOutEntityTeleport;
-import net.minecraft.network.protocol.game.PacketPlayOutSpawnEntity;
+import com.kooy29.liarslounge.nms.paper.VersionWrapper;
+import com.kooy29.liarslounge.nms.paper.animation.ArmorStandBuilder;
+import net.minecraft.network.chat.Component;
+import net.minecraft.network.protocol.game.ClientboundAddEntityPacket;
+import net.minecraft.network.protocol.game.ClientboundRemoveEntitiesPacket;
+import net.minecraft.network.protocol.game.ClientboundSetEntityDataPacket;
+import net.minecraft.network.protocol.game.ClientboundTeleportEntityPacket;
 import net.minecraft.world.entity.PositionMoveRotation;
 import net.minecraft.world.entity.Relative;
-import net.minecraft.world.entity.decoration.EntityArmorStand;
-import net.minecraft.world.phys.Vec3D;
+import net.minecraft.world.entity.decoration.ArmorStand;
+import net.minecraft.world.phys.Vec3;
 import org.bukkit.Location;
-import org.bukkit.craftbukkit.v1_21_R7.util.CraftChatMessage;
 
 import java.util.HashSet;
 import java.util.Set;
 
 public class HologramLine implements IHologramLine {
 
-    public final EntityArmorStand entity;
+    public final ArmorStand entity;
     private String text;
     private IHologram hologram;
     private boolean destroyed = false;
@@ -70,17 +70,17 @@ public class HologramLine implements IHologramLine {
 
     @Override
     public void refresh() {
-        entity.b(CraftChatMessage.fromStringOrNull(text)); // setCustomName
+        entity.setCustomName(Component.nullToEmpty(text));
         int position = hologram.getLines().indexOf(this);
-        entity.n(hologram.getLocation().getX(), hologram.getLocation().getY() + position * hologram.getGap(), hologram.getLocation().getZ()); //setPosRaw
+        entity.setPosRaw(hologram.getLocation().getX(), hologram.getLocation().getY() + position * hologram.getGap(), hologram.getLocation().getZ());
         if (destroyed) return;
 
-        PacketPlayOutEntityMetadata metadataPacket = new PacketPlayOutEntityMetadata(entity.aA(), entity.aD().c()); // getId(), getEntityData()
+        ClientboundSetEntityDataPacket metadataPacket = new ClientboundSetEntityDataPacket(entity.getId(), entity.getEntityData().getNonDefaultValues());
 
-        final var delta = new Vec3D(0,0,0);
-        final var positionMoveRotation = new PositionMoveRotation(entity.dJ(), delta, 0, entity.ee());  // trackingPosition(), , , getXRot()
+        final var delta = new Vec3(0,0,0);
+        final var positionMoveRotation = new PositionMoveRotation(entity.trackingPosition(), delta, 0, entity.getXRot());
         final Set<Relative> set = new HashSet<>();
-        PacketPlayOutEntityTeleport teleportPacket = new PacketPlayOutEntityTeleport(entity.aA(), positionMoveRotation, set, false); // getId()
+        ClientboundTeleportEntityPacket teleportPacket = new ClientboundTeleportEntityPacket(entity.getId(), positionMoveRotation, set, false);
 
         VersionWrapper.sendPackets(hologram.getPlayer(), metadataPacket, teleportPacket);
     }
@@ -89,7 +89,7 @@ public class HologramLine implements IHologramLine {
     public void show() {
         destroyed = false;
 
-        PacketPlayOutSpawnEntity packet = ArmorStandBuilder.packetPlayOutSpawnEntity(entity);
+        ClientboundAddEntityPacket packet = ArmorStandBuilder.packetPlayOutSpawnEntity(entity);
         VersionWrapper.sendPacket(hologram.getPlayer(), packet);
 
         if (!hologram.getLines().contains(this)) hologram.addLine(this);
@@ -98,7 +98,7 @@ public class HologramLine implements IHologramLine {
 
     @Override
     public void hide() {
-        VersionWrapper.sendPacket(hologram.getPlayer(), new PacketPlayOutEntityDestroy(entity.aA()));
+        VersionWrapper.sendPacket(hologram.getPlayer(), new ClientboundRemoveEntitiesPacket(entity.getId()));
     }
 
     @Override
