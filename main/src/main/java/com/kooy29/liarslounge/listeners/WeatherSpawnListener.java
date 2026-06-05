@@ -18,21 +18,21 @@ public class WeatherSpawnListener implements Listener {
 
     @EventHandler
     public void onWeatherChange(WeatherChangeEvent e) {
-        if ((e.getWorld() == ExtraUtil.getLobbyLocation().getWorld() || arenaManager.isArenaByWorld(e.getWorld().getName())) && e.toWeatherState())
+        if ((ExtraUtil.lobbyProtection(e.getWorld()) || arenaManager.isArenaByWorld(e.getWorld().getName())) && e.toWeatherState())
             e.setCancelled(true);
     }
 
     @EventHandler
     public void onCreatureSpawn(CreatureSpawnEvent e) {
         if (e.getSpawnReason() == CreatureSpawnEvent.SpawnReason.CUSTOM) return;
-        if (e.getLocation().getWorld() == ExtraUtil.getLobbyLocation().getWorld() || arenaManager.isArenaByWorld(e.getLocation().getWorld().getName())) {
+        if (ExtraUtil.lobbyProtection(e.getLocation().getWorld()) || arenaManager.isArenaByWorld(e.getLocation().getWorld().getName())) {
             e.setCancelled(true);
         }
     }
 
     @EventHandler
     public void onArmorManipulate(PlayerArmorStandManipulateEvent e) {
-        if (e.getPlayer().getWorld() == ExtraUtil.getLobbyLocation().getWorld() || arenaManager.isArenaByWorld(e.getPlayer().getWorld().getName()))
+        if (ExtraUtil.lobbyProtection(e.getPlayer().getWorld()) || arenaManager.isArenaByWorld(e.getPlayer().getWorld().getName()))
             e.setCancelled(true);
     }
 }

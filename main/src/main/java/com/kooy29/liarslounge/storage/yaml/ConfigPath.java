@@ -20,6 +20,7 @@ public class ConfigPath {
 
     // Main configuration paths
     public static final String DATABASE = "database";
+    public static final String LOBBY_PROT = "game.lobby-protection";
     public static final String SEND_PROTIP = "game.send-pro-tip";
     public static final String ALLOW_CHAT_ARENA = "game.allow-chat-arena";
     public static final String ALLOWED_COMMANDS = "game.allowed-commands";

@@ -5,7 +5,6 @@ import com.kooy29.liarslounge.api.arena.IArena;
 import com.kooy29.liarslounge.api.arena.IArenaManager;
 import com.kooy29.liarslounge.api.storage.IPlayerStats;
 import com.kooy29.liarslounge.arena.ArenaSetupSession;
-import com.kooy29.liarslounge.storage.MapBuild;
 import com.kooy29.liarslounge.storage.PlayerStats;
 import com.kooy29.liarslounge.utils.ExtraUtil;
 import org.bukkit.Bukkit;
@@ -65,14 +64,13 @@ public class PlayerListener implements Listener {
         }
         IArena.gamePlayers.remove(p);
         ArenaSetupSession.removePlayerFromSession(p);
-        MapBuild.removePlayer(e.getPlayer());
     }
 
     @EventHandler
     public void onDamageListener(EntityDamageEvent e) {
         if (e.getEntity() instanceof Player) {
             Player player = (Player) e.getEntity();
-            if (player.getWorld() == ExtraUtil.getLobbyLocation().getWorld() || arenaManager.isPlayerInArena(player))
+            if (ExtraUtil.lobbyProtection(player.getWorld()) || arenaManager.isPlayerInArena(player))
                 e.setCancelled(true);
         }
     }
@@ -92,7 +90,7 @@ public class PlayerListener implements Listener {
     public void onFoodLevelChange(FoodLevelChangeEvent e) {
         if (e.getEntity() instanceof Player) {
             Player player = (Player) e.getEntity();
-            if (player.getWorld() == ExtraUtil.getLobbyLocation().getWorld() || arenaManager.isPlayerInArena(player))
+            if (ExtraUtil.lobbyProtection(player.getWorld()) || arenaManager.isPlayerInArena(player))
                 e.setCancelled(true);
         }
     }

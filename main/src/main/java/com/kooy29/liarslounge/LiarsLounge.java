@@ -142,7 +142,7 @@ public final class LiarsLounge extends JavaPlugin implements API {
         getServer().getPluginManager().registerEvents(new ArenaSelectorListener(versionWrapper), this);
         getServer().getPluginManager().registerEvents(new ItemsListener(versionWrapper, arenaManager, mainConfig.getConfig()), this);
         getServer().getPluginManager().registerEvents(new CmdListener(arenaManager, mainConfig), this);
-        if (ExtraUtil.isLobbyLocation()) ExtraUtil.setGameRules(ExtraUtil.getLobbyLocation().getWorld());
+        if (valuesConfig.getConfig().getBoolean(ConfigPath.LOBBY_PROT) && ExtraUtil.isLobbyLocation()) ExtraUtil.setGameRules(ExtraUtil.getLobbyLocation().getWorld());
         sendConsoleMessage("&aLiarsLounge has been enabled");
     }
 

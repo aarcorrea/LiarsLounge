@@ -9,7 +9,6 @@ help-commands:
     admin:
       - '&7/ll arena'
       - '&7/ll setup'
-      - '&7/ll build'
   arena:
     default:
       - '&3&l» &r&3LiarsLounge &7| &3Arena:'

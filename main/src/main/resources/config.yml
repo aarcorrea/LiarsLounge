@@ -19,8 +19,13 @@ database:
   connection-timeout: 30000
 
 game:
+  # Lobby protection features
+  lobby-protection: true
+  # Whether to send the "left click to select" message to user
   send-pro-tip: true
+  # Allows players to talk in game
   allow-chat-arena: true
+  # allowed commands list while in game
   allowed-commands:
     - 'leave'
     - 'll'

@@ -36,6 +36,9 @@ permissions:
   liarslounge.setup:
     description: Allows players to set up arenas
     default: op
+  liarslounge.build:
+    description: Allows player to build in-game
+    default: false
   liarslounge.arena.enable:
     description: Allows enabling of arenas
     default: op

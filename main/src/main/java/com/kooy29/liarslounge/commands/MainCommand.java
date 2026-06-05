@@ -4,7 +4,6 @@ import com.kooy29.liarslounge.LiarsLounge;
 import com.kooy29.liarslounge.api.arena.GameState;
 import com.kooy29.liarslounge.api.arena.IArena;
 import com.kooy29.liarslounge.arena.ArenaSetupSession;
-import com.kooy29.liarslounge.commands.sub.BuildCommand;
 import com.kooy29.liarslounge.commands.sub.GuiCommand;
 import com.kooy29.liarslounge.commands.sub.HelpCommand;
 import com.kooy29.liarslounge.commands.sub.ReloadCommand;
@@ -33,7 +32,6 @@ public class MainCommand implements CommandExecutor, TabCompleter {
         register(new JoinCommand());
         register(new LeaveCommand());
         register(new StartCommand());
-        register(new BuildCommand());
         register(new SpectateCommand());
         register(new GuiCommand());
 //        register(new TestCommand());

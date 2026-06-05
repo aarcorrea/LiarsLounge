@@ -6,7 +6,6 @@ import com.kooy29.liarslounge.api.arena.GameState;
 import com.kooy29.liarslounge.api.arena.IArena;
 import com.kooy29.liarslounge.api.arena.IArenaManager;
 import com.kooy29.liarslounge.api.nms.IVersionWrapper;
-import com.kooy29.liarslounge.storage.MapBuild;
 import com.kooy29.liarslounge.storage.yaml.ConfigPath;
 import com.kooy29.liarslounge.storage.yaml.MsgPath;
 import com.kooy29.liarslounge.storage.yaml.SoundsPath;
@@ -53,7 +52,7 @@ public class ItemsListener implements Listener {
         IArena arena = gamePlayer.arena;
 
         if (arena == null) {
-            if (player.getWorld() == ExtraUtil.getLobbyLocation().getWorld())
+            if (ExtraUtil.lobbyProtection(player.getWorld()))
                 e.setCancelled(true);
             return;
         }
@@ -143,7 +142,7 @@ public class ItemsListener implements Listener {
     @EventHandler
     public void onItemFrameInteract(PlayerInteractEntityEvent event) {
         if (event.getRightClicked() == null) return;
-        if (event.getRightClicked().getWorld() == ExtraUtil.getLobbyLocation().getWorld() || arenaManager.isArenaByWorld(event.getRightClicked().getWorld().getName())) {
+        if (ExtraUtil.lobbyProtection(event.getRightClicked().getWorld()) || arenaManager.isArenaByWorld(event.getRightClicked().getWorld().getName())) {
             if (event.getRightClicked().getType() == EntityType.ITEM_FRAME) {
                 event.setCancelled(true);
             }
@@ -152,14 +151,14 @@ public class ItemsListener implements Listener {
 
     @EventHandler
     public void onItemFrameClickListener(EntityDamageByEntityEvent e) {
-        if (e.getEntity().getWorld() == ExtraUtil.getLobbyLocation().getWorld() || arenaManager.isArenaByWorld(e.getEntity().getWorld().getName())) {
+        if (ExtraUtil.lobbyProtection(e.getEntity().getWorld()) || arenaManager.isArenaByWorld(e.getEntity().getWorld().getName())) {
             e.setCancelled(true);
         }
     }
 
     @EventHandler
     public void onHangingBreak(HangingBreakByEntityEvent e) {
-        if (e.getEntity().getWorld() == ExtraUtil.getLobbyLocation().getWorld() || arenaManager.isArenaByWorld(e.getEntity().getWorld().getName())) {
+        if (ExtraUtil.lobbyProtection(e.getEntity().getWorld()) || arenaManager.isArenaByWorld(e.getEntity().getWorld().getName())) {
             e.setCancelled(true);
         }
     }
@@ -197,7 +196,7 @@ public class ItemsListener implements Listener {
 
     @EventHandler
     public void onPlayerPickupItem(PlayerPickupItemEvent e) { // TODO: 1.12+ event replaced with EntityPickupItemEvent, fix for 1.8.8+ ver
-        if (e.getPlayer().getWorld() == ExtraUtil.getLobbyLocation().getWorld() || arenaManager.isPlayerInArena(e.getPlayer()))
+        if (ExtraUtil.lobbyProtection(e.getPlayer().getWorld()) || arenaManager.isPlayerInArena(e.getPlayer()))
             e.setCancelled(true);
     }
 
@@ -206,8 +205,8 @@ public class ItemsListener implements Listener {
         if (!(e.getWhoClicked() instanceof Player)) return;
 
         Player player = (Player) e.getWhoClicked();
-        if (MapBuild.canBuild(player) && !nms.isCustomItem(e.getCurrentItem())) return;
-        if (player.getWorld().equals(ExtraUtil.getLobbyLocation().getWorld()) || arenaManager.isPlayerInArena(player)) {
+        if (!nms.isCustomItem(e.getCurrentItem())) return;
+        if (ExtraUtil.lobbyProtection(player.getWorld()) || arenaManager.isPlayerInArena(player)) {
             e.setCancelled(true);
 
             // Prevent hotbar swapping with number keys
@@ -222,10 +221,10 @@ public class ItemsListener implements Listener {
         if (!(e.getWhoClicked() instanceof Player)) return;
 
         Player player = (Player) e.getWhoClicked();
-        if (MapBuild.canBuild(player) && (!nms.isCustomItem(e.getCursor())) || !nms.isCustomItem(e.getOldCursor()))
+        if (!nms.isCustomItem(e.getCursor()) || !nms.isCustomItem(e.getOldCursor()))
             return;
 
-        if (player.getWorld().equals(ExtraUtil.getLobbyLocation().getWorld()) || arenaManager.isPlayerInArena(player)) {
+        if (ExtraUtil.lobbyProtection(player.getWorld()) || arenaManager.isPlayerInArena(player)) {
             e.setCancelled(true);
             player.updateInventory(); // Check for desync
         }

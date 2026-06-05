@@ -4,6 +4,7 @@ import com.kooy29.liarslounge.APIProvider;
 import com.kooy29.liarslounge.LiarsLounge;
 import com.kooy29.liarslounge.api.arena.IArena;
 import com.kooy29.liarslounge.api.arena.IArenaManager;
+import com.kooy29.liarslounge.storage.yaml.ConfigPath;
 import com.kooy29.liarslounge.storage.yaml.MsgPath;
 import com.kooy29.liarslounge.storage.yaml.ValuesPath;
 import org.bukkit.Bukkit;
@@ -52,6 +53,14 @@ public class ExtraUtil {
                 .getValuesConfig()
                 .getConfig()
                 .isConfigurationSection(ValuesPath.Lobby.LOCATION);
+    }
+
+    public static boolean lobbyProtection(World world) {
+        if (!LiarsLounge.getInstance()
+                .getValuesConfig()
+                .getConfig().getBoolean(ConfigPath.LOBBY_PROT)) return false;
+
+        return world == ExtraUtil.getLobbyLocation().getWorld();
     }
 
     public static void setLobbyLocation(Location loc) {
