@@ -22,11 +22,23 @@ public class WeatherSpawnListener implements Listener {
             e.setCancelled(true);
     }
 
-    @EventHandler
+    @EventHandler(ignoreCancelled = true)
     public void onCreatureSpawn(CreatureSpawnEvent e) {
-        if (e.getSpawnReason() == CreatureSpawnEvent.SpawnReason.CUSTOM) return;
-        if (ExtraUtil.lobbyProtection(e.getLocation().getWorld()) || arenaManager.isArenaByWorld(e.getLocation().getWorld().getName())) {
-            e.setCancelled(true);
+        if (!(ExtraUtil.lobbyProtection(e.getLocation().getWorld()) || arenaManager.isArenaByWorld(e.getLocation().getWorld().getName())))
+            return;
+
+        switch (e.getSpawnReason()) {
+            case SPAWNER_EGG:
+            case CUSTOM:
+            case BUILD_IRONGOLEM:
+            case BUILD_SNOWMAN:
+            case BUILD_WITHER:
+            case BREEDING:
+            case DISPENSE_EGG:
+                return;
+            default:
+                // cancel everything else except spawned using player/plugin
+                e.setCancelled(true);
         }
     }
 
