@@ -32,6 +32,7 @@ public class WeatherSpawnListener implements Listener {
 
     @EventHandler
     public void onArmorManipulate(PlayerArmorStandManipulateEvent e) {
+        if (ExtraUtil.hasPermissionNP(e.getPlayer(), "liarslounge.build")) return;
         if (ExtraUtil.lobbyProtection(e.getPlayer().getWorld()) || arenaManager.isArenaByWorld(e.getPlayer().getWorld().getName()))
             e.setCancelled(true);
     }

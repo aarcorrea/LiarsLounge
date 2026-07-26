@@ -108,7 +108,6 @@ public class Arena implements IArena {
                 }
             }
         }
-        this.chairLocations.subList(4, this.chairLocations.size()).clear();
         ConfigurationSection actionItems = arenaConfig.getConfig().getConfigurationSection(ConfigPath.ARENA_ACTION_ITEMS);
         this.actionItemsLocation = new ArrayList<>();
         if (actionItems != null) {
@@ -125,7 +124,6 @@ public class Arena implements IArena {
                 }
             }
         }
-        this.actionItemsLocation.subList(4, this.actionItemsLocation.size()).clear();
         this.players = new ArrayList<>();
         this.playerStats = new ArrayList<>();
         this.spectators = new HashSet<>();
@@ -179,7 +177,7 @@ public class Arena implements IArena {
             board.updateTitle(scoreboard.waiting.getTitle());
             board.updateLines(latestScoreboardLines);
         } else {
-            Bukkit.getScheduler().runTaskAsynchronously(instance, () -> {
+            Bukkit.getScheduler().runTask(instance, () -> {
                 if (!p.isOnline()) return;
                 if (gameState == GameState.WAITING) {
                     board.updateTitle(scoreboard.waiting.getTitle());

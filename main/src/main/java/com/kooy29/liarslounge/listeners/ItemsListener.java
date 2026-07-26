@@ -140,17 +140,19 @@ public class ItemsListener implements Listener {
     }
 
     @EventHandler
-    public void onItemFrameInteract(PlayerInteractEntityEvent event) {
-        if (event.getRightClicked() == null) return;
-        if (ExtraUtil.lobbyProtection(event.getRightClicked().getWorld()) || arenaManager.isArenaByWorld(event.getRightClicked().getWorld().getName())) {
-            if (event.getRightClicked().getType() == EntityType.ITEM_FRAME) {
-                event.setCancelled(true);
+    public void onItemFrameInteract(PlayerInteractEntityEvent e) {
+        if (e.getRightClicked() == null) return;
+        if (ExtraUtil.hasPermissionNP(e.getPlayer(), "liarslounge.build")) return;
+        if (ExtraUtil.lobbyProtection(e.getRightClicked().getWorld()) || arenaManager.isArenaByWorld(e.getRightClicked().getWorld().getName())) {
+            if (e.getRightClicked().getType() == EntityType.ITEM_FRAME) {
+                e.setCancelled(true);
             }
         }
     }
 
     @EventHandler
     public void onItemFrameClickListener(EntityDamageByEntityEvent e) {
+        if (e.getDamager() instanceof Player && ExtraUtil.hasPermissionNP(e.getDamager(), "liarslounge.build")) return;
         if (ExtraUtil.lobbyProtection(e.getEntity().getWorld()) || arenaManager.isArenaByWorld(e.getEntity().getWorld().getName())) {
             e.setCancelled(true);
         }
@@ -158,6 +160,7 @@ public class ItemsListener implements Listener {
 
     @EventHandler
     public void onHangingBreak(HangingBreakByEntityEvent e) {
+        if (e.getRemover() instanceof Player && ExtraUtil.hasPermissionNP(e.getRemover(), "liarslounge.build")) return;
         if (ExtraUtil.lobbyProtection(e.getEntity().getWorld()) || arenaManager.isArenaByWorld(e.getEntity().getWorld().getName())) {
             e.setCancelled(true);
         }
@@ -196,6 +199,7 @@ public class ItemsListener implements Listener {
 
     @EventHandler
     public void onPlayerPickupItem(PlayerPickupItemEvent e) { // TODO: 1.12+ event replaced with EntityPickupItemEvent, fix for 1.8.8+ ver
+        if (ExtraUtil.hasPermissionNP(e.getPlayer(), "liarslounge.build")) return;
         if (ExtraUtil.lobbyProtection(e.getPlayer().getWorld()) || arenaManager.isPlayerInArena(e.getPlayer()))
             e.setCancelled(true);
     }

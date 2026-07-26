@@ -70,6 +70,7 @@ public class PlayerListener implements Listener {
     public void onDamageListener(EntityDamageEvent e) {
         if (e.getEntity() instanceof Player) {
             Player player = (Player) e.getEntity();
+            if (ExtraUtil.hasPermissionNP(player, "liarslounge.build")) return;
             if (ExtraUtil.lobbyProtection(player.getWorld()) || arenaManager.isPlayerInArena(player))
                 e.setCancelled(true);
         }
